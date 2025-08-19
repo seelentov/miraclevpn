@@ -3,19 +3,23 @@ package controller
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"miraclevpn/internal/services/auth"
+	"miraclevpn/internal/services/crypt"
 
 	"github.com/gin-gonic/gin"
 )
 
 type AuthController struct {
 	srv *auth.AuthService
+	jwt *crypt.JwtService
 }
 
-func NewAuthController(srv *auth.AuthService) *AuthController {
+func NewAuthController(srv *auth.AuthService, jwt *crypt.JwtService) *AuthController {
 	return &AuthController{
 		srv: srv,
+		jwt: jwt,
 	}
 }
 
@@ -56,7 +60,7 @@ func (c *AuthController) PostRegister(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	token, err := c.srv.SignIn(req.Phone, req.Password, req.CheckPassword)
+	token, tgLink, err := c.srv.SignIn(req.Phone, req.Password, req.CheckPassword)
 	if err != nil {
 		if errors.Is(err, auth.ErrAlreadyExists) {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Пользователь с этим номером телефона уже существует"})
@@ -67,5 +71,30 @@ func (c *AuthController) PostRegister(ctx *gin.Context) {
 		}
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"token": token})
+	ctx.JSON(http.StatusOK, gin.H{"token": token, "tg_link": tgLink})
+}
+
+func (c *AuthController) PostActivate(ctx *gin.Context) {
+	var req PostActivateReq
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	claims, err := c.jwt.ParseToken(req.TgToken)
+	if err != nil || claims.UserID == "" {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Неверный токен"})
+		return
+	}
+
+	userID, err := strconv.ParseInt(claims.UserID, 10, 64)
+	if err != nil {
+		panic(err)
+	}
+
+	if err := c.srv.Activate(userID, req.ChatID); err != nil {
+		panic(err)
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "Пользователь успешно активирован"})
 }

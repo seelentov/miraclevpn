@@ -14,7 +14,11 @@ func setup() {
 	if err := godotenv.Load("../../.env"); err != nil {
 		log.Fatal(err)
 	}
-	client = NewTgClient(os.Getenv("TELEGRAM_TOKEN"))
+
+	tgToken := os.Getenv("TG_TOKEN")
+	tgName := os.Getenv("TG_NAME")
+
+	client = NewTgClient(tgToken, tgName)
 }
 
 func teardown() {

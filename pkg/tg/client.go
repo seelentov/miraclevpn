@@ -13,12 +13,14 @@ var (
 
 type TgClient struct {
 	token  string
+	name   string
 	client *http.Client
 }
 
-func NewTgClient(token string) *TgClient {
+func NewTgClient(token string, name string) *TgClient {
 	return &TgClient{
 		token,
+		name,
 		&http.Client{},
 	}
 }
@@ -36,4 +38,8 @@ func (c *TgClient) SendMessage(to string, message string) error {
 	}
 
 	return nil
+}
+
+func (c *TgClient) GetName() string {
+	return c.name
 }

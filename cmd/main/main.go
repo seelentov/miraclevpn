@@ -34,7 +34,7 @@ func main() {
 	// Получение параметров из .env
 	dbUser := os.Getenv("DB_USER")
 	dbHost := os.Getenv("DB_HOST")
-	dbPass := os.Getenv("DB_PASS")
+	dbPass := os.Getenv("DB_PASSWORD")
 	dbName := os.Getenv("DB_NAME")
 	dbPort := os.Getenv("DB_PORT")
 	dbSsl := os.Getenv("DB_SSLMODE")
@@ -50,6 +50,7 @@ func main() {
 	}
 
 	tgToken := os.Getenv("TG_TOKEN")
+	tgName := os.Getenv("TG_NAME")
 
 	// Инициализация логгера
 	logger, err := logg.NewZapLogger(logDir, logRetain, debug)
@@ -79,11 +80,10 @@ func main() {
 	veriRepo := repo.NewVerifierRepository(gormDB)
 	serverRepo := repo.NewServerRepository(gormDB)
 	userServerRepo := repo.NewUserServerRepository(gormDB)
-	tgTempRepo := repo.NewTgTempRepository(gormDB)
 
 	// Telegram sender
-	tgSender := tg.NewTgClient(tgToken)
-	tgSrv := sender.NewTgService(userRepo, tgSender, tgTempRepo, logger.Logger)
+	tgSender := tg.NewTgClient(tgToken, tgName)
+	tgSrv := sender.NewTgService(userRepo, tgSender, logger.Logger)
 
 	// VPN сервис (пример, замените на свою реализацию)
 	var vpnSrv vpn.VpnService // Инициализация vpn.Client или другого vpn.VpnService
@@ -94,7 +94,7 @@ func main() {
 	serversSrv := servers.NewServersService(userServerRepo, serverRepo, userRepo, vpnSrv, logger.Logger)
 
 	// Контроллеры
-	authCtrl := controller.NewAuthController(authSrv)
+	authCtrl := controller.NewAuthController(authSrv, jwtSrv)
 	userCtrl := controller.NewUserController(userSrv)
 	serverCtrl := controller.NewServerController(serversSrv)
 
@@ -112,6 +112,7 @@ func main() {
 			{
 				auth.POST("/login", authCtrl.PostLogin)
 				auth.POST("/register", authCtrl.PostRegister)
+				auth.POST("/activate", authCtrl.PostActivate)
 			}
 
 			o := v1.Group("/")
@@ -120,7 +121,6 @@ func main() {
 				userGroup := o.Group("/user")
 				{
 					userGroup.GET("/", userCtrl.GetUser)
-					userGroup.POST("/activate", userCtrl.PostActivate)
 				}
 				serverGroup := o.Group("/server")
 				{
