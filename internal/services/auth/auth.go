@@ -64,7 +64,7 @@ func (s *AuthService) Authenticate(phone, password string) (string, error) {
 		return "", err
 	}
 
-	s.logger.Info("user authenticated", zap.Int64("user_id", user.ID), zap.String("phone", phone))
+	s.logger.Debug("user authenticated", zap.Int64("user_id", user.ID), zap.String("phone", phone))
 	return token, nil
 }
 
@@ -90,14 +90,14 @@ func (s *AuthService) SignIn(phone, password string, checkPassword string) (toke
 		s.logger.Error("failed to create user", zap.String("phone", phone), zap.Error(err))
 		return "", "", err
 	}
-	s.logger.Info("user created", zap.Int64("user_id", u.ID), zap.String("phone", phone))
+	s.logger.Debug("user created", zap.Int64("user_id", u.ID), zap.String("phone", phone))
 
 	code, err := s.veriRepo.Create(u.ID, time.Now().Add(15*time.Minute))
 	if err != nil {
 		s.logger.Error("failed to create verifier code", zap.Int64("user_id", u.ID), zap.Error(err))
 		return "", "", err
 	}
-	s.logger.Info("verifier code created", zap.Int64("user_id", u.ID), zap.Int32("code", code))
+	s.logger.Debug("verifier code created", zap.Int64("user_id", u.ID), zap.Int32("code", code))
 
 	token, err = s.jwtSrv.GenerateToken(strconv.Itoa(int(u.ID)), s.jwtDuration)
 	if err != nil {
@@ -111,9 +111,9 @@ func (s *AuthService) SignIn(phone, password string, checkPassword string) (toke
 		return "", "", err
 	}
 
-	s.logger.Info("user registered and token generated", zap.Int64("user_id", u.ID), zap.String("phone", phone))
+	s.logger.Debug("user registered and token generated", zap.Int64("user_id", u.ID), zap.String("phone", phone))
 
-	tgLink = fmt.Sprintf("https://t.me/%s?start=%s", s.senderSrv.GetName(), tgToken)
+	tgLink = fmt.Sprintf("https://t.me/%s?text=%s", s.senderSrv.GetName(), tgToken)
 	return token, tgLink, nil
 }
 
@@ -130,6 +130,6 @@ func (s *AuthService) Activate(userID int64, chatID int64) error {
 		return err
 	}
 
-	s.logger.Info("user activated", zap.Int64("user_id", userID))
+	s.logger.Debug("user activated", zap.Int64("user_id", userID))
 	return nil
 }

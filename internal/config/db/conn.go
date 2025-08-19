@@ -1,10 +1,17 @@
 package db
 
 import (
+	"miraclevpn/internal/models"
+
 	"gorm.io/gorm"
 )
 
-var migrate = []any{}
+var migrate = []any{
+	&models.User{},
+	&models.Server{},
+	&models.UserServer{},
+	&models.Verifier{},
+}
 
 func NewConn(dialector gorm.Dialector) (*gorm.DB, error) {
 	db, err := gorm.Open(dialector, &gorm.Config{})

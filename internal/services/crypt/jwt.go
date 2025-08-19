@@ -43,7 +43,7 @@ func (j *JwtService) GenerateToken(userID string, duration time.Duration) (strin
 		j.logger.Error("failed to sign JWT token", zap.String("user_id", userID), zap.Error(err))
 		return "", err
 	}
-	j.logger.Info("JWT token generated", zap.String("user_id", userID))
+	j.logger.Debug("JWT token generated", zap.String("user_id", userID))
 	return signed, nil
 }
 
@@ -61,6 +61,6 @@ func (j *JwtService) ParseToken(tokenStr string) (*Claims, error) {
 		j.logger.Warn("invalid JWT token")
 		return nil, ErrInvalidToken
 	}
-	j.logger.Info("JWT token parsed", zap.String("user_id", claims.UserID))
+	j.logger.Debug("JWT token parsed", zap.String("user_id", claims.UserID))
 	return claims, nil
 }

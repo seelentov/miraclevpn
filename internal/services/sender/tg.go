@@ -38,17 +38,17 @@ func (s *TgService) SendMessage(userID int64, message string) error {
 
 	if user.TGChat != nil {
 		chatID := strconv.Itoa(int(*(user.TGChat)))
-		s.logger.Info("sending message to TGChat", zap.Int64("user_id", userID), zap.String("chat_id", chatID))
+		s.logger.Debug("sending message to TGChat", zap.Int64("user_id", userID), zap.String("chat_id", chatID))
 		err := s.sender.SendMessage(chatID, message)
 		if err != nil {
 			s.logger.Error("failed to send message to TGChat", zap.Int64("user_id", userID), zap.String("chat_id", chatID), zap.Error(err))
 			return err
 		}
-		s.logger.Info("message sent to TGChat", zap.Int64("user_id", userID), zap.String("chat_id", chatID))
+		s.logger.Debug("message sent to TGChat", zap.Int64("user_id", userID), zap.String("chat_id", chatID))
 		return nil
 	}
 
-	s.logger.Info("user has no TGChat", zap.Int64("user_id", userID))
+	s.logger.Debug("user has no TGChat", zap.Int64("user_id", userID))
 	return fmt.Errorf("%w: by user %d", ErrChatIDNil, userID)
 }
 

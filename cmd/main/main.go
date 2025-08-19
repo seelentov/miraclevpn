@@ -3,7 +3,9 @@ package main
 import (
 	"log"
 	"math"
+	tg_daemon "miraclevpn/internal/daemon/tg"
 	"miraclevpn/internal/http/middleware"
+	"miraclevpn/internal/models"
 	"os"
 	"strconv"
 	"time"
@@ -98,6 +100,10 @@ func main() {
 	userCtrl := controller.NewUserController(userSrv)
 	serverCtrl := controller.NewServerController(serversSrv)
 
+	//Демоны
+	daemon := tg_daemon.NewTgDaemon(tgToken, jwtSrv, userRepo)
+	daemon.Start()
+
 	r := gin.Default()
 	r.Use(middleware.Recovery())
 	r.NoRoute(middleware.NotFound())
@@ -130,6 +136,29 @@ func main() {
 				}
 			}
 		}
+	}
+
+	//DEBUG
+	if debug {
+		p, err := argonSrv.GenerateHash("12345678")
+		if err != nil {
+			logger.Logger.Fatal("cant create debug user", zap.Error(err))
+		}
+
+		gormDB.Save(&models.User{
+			ID:        1,
+			Phone:     "+79028608750",
+			Password:  p,
+			TGChat:    nil,
+			Active:    false,
+			ExpiredAt: time.Now().Add(time.Hour * 24 * 365),
+		})
+
+		token, err := jwtSrv.GenerateToken("1", time.Duration(jwtDuration)*time.Minute)
+		if err != nil {
+			logger.Logger.Fatal("cant generate debug token", zap.Error(err))
+		}
+		logger.Logger.Info("debug token", zap.String("token", token))
 	}
 
 	r.Run(":" + os.Getenv("PORT"))

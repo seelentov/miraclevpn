@@ -6,7 +6,7 @@ import (
 
 	"miraclevpn/internal/config/db"
 	"miraclevpn/internal/config/logg"
-	"miraclevpn/internal/daemon/tg"
+	tg_daemon "miraclevpn/internal/daemon/tg"
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/crypt"
 
@@ -55,7 +55,7 @@ func main() {
 	userRepo := repo.NewUserRepository(gormDB, argonSrv)
 	jwtSrv := crypt.NewJwtService(jwtSecret, nil)
 
-	daemon := tg.NewTgDaemon(botToken, jwtSrv, userRepo)
+	daemon := tg_daemon.NewTgDaemon(botToken, jwtSrv, userRepo)
 	daemon.Start()
 
 	log.Println("Telegram daemon started. Press Ctrl+C to exit.")

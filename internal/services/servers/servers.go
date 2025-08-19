@@ -33,7 +33,7 @@ func (s *ServersService) GetAllServers() ([]*models.Server, error) {
 		s.logger.Error("failed to get all servers", zap.Error(err))
 		return nil, err
 	}
-	s.logger.Info("all servers fetched", zap.Int("count", len(servers)))
+	s.logger.Debug("all servers fetched", zap.Int("count", len(servers)))
 	return servers, nil
 }
 
@@ -44,7 +44,7 @@ func (s *ServersService) GetServersByRegion(region string) ([]*models.Server, er
 		s.logger.Error("failed to get servers by region", zap.String("region", region), zap.Error(err))
 		return nil, err
 	}
-	s.logger.Info("servers by region fetched", zap.String("region", region), zap.Int("count", len(servers)))
+	s.logger.Debug("servers by region fetched", zap.String("region", region), zap.Int("count", len(servers)))
 	return servers, nil
 }
 
@@ -55,7 +55,7 @@ func (s *ServersService) GetServerByID(id int64) (*models.Server, error) {
 		s.logger.Error("failed to get server by id", zap.Int64("server_id", id), zap.Error(err))
 		return nil, err
 	}
-	s.logger.Info("server fetched", zap.Int64("server_id", id))
+	s.logger.Debug("server fetched", zap.Int64("server_id", id))
 	return server, nil
 }
 
@@ -67,7 +67,7 @@ func (s *ServersService) GetConfig(userID int64, serverID int64) (string, error)
 		return "", err
 	}
 	if us != nil {
-		s.logger.Info("config found for user-server", zap.Int64("user_id", userID), zap.Int64("server_id", serverID))
+		s.logger.Debug("config found for user-server", zap.Int64("user_id", userID), zap.Int64("server_id", serverID))
 		return us.Config, nil
 	}
 
@@ -83,7 +83,7 @@ func (s *ServersService) GetConfig(userID int64, serverID int64) (string, error)
 		return "", err
 	}
 
-	s.logger.Info("creating VPN user", zap.String("host", srv.Host), zap.String("phone", usr.Phone))
+	s.logger.Debug("creating VPN user", zap.String("host", srv.Host), zap.String("phone", usr.Phone))
 	config, err := s.VpnService.CreateUser(srv.Host, usr.Phone)
 	if err != nil {
 		s.logger.Error("failed to create VPN user", zap.String("host", srv.Host), zap.String("phone", usr.Phone), zap.Error(err))
@@ -95,6 +95,6 @@ func (s *ServersService) GetConfig(userID int64, serverID int64) (string, error)
 		return "", err
 	}
 
-	s.logger.Info("vpn config created and saved", zap.Int64("user_id", userID), zap.Int64("server_id", serverID))
+	s.logger.Debug("vpn config created and saved", zap.Int64("user_id", userID), zap.Int64("server_id", serverID))
 	return config, nil
 }

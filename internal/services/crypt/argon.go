@@ -59,7 +59,7 @@ func (s *ArgonService) GenerateHash(password string) (string, error) {
 		b64Hash,
 	)
 
-	s.logger.Info("hash generated",
+	s.logger.Debug("hash generated",
 		zap.Int("salt_length", int(s.params.SaltLength)),
 		zap.Int("key_length", int(s.params.KeyLength)),
 	)
@@ -85,7 +85,7 @@ func (s *ArgonService) ComparePasswordAndHash(password, encodedHash string) (boo
 	)
 
 	if subtle.ConstantTimeCompare(hash, otherHash) == 1 {
-		s.logger.Info("password match", zap.Int("key_length", int(params.KeyLength)))
+		s.logger.Debug("password match", zap.Int("key_length", int(params.KeyLength)))
 		return true, nil
 	}
 	s.logger.Warn("password does not match")

@@ -74,6 +74,11 @@ func (c *AuthController) PostRegister(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"token": token, "tg_link": tgLink})
 }
 
+type PostActivateReq struct {
+	TgToken string `json:"tg_token" binding:"required"`
+	ChatID  int64  `json:"chat_id" binding:"required"`
+}
+
 func (c *AuthController) PostActivate(ctx *gin.Context) {
 	var req PostActivateReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
