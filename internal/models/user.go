@@ -5,11 +5,11 @@ import "time"
 type User struct {
 	ID int64 `gorm:"primaryKey"`
 
-	Phone    string
+	Phone    string `gorm:"uniqueIndex"`
 	Password string
 
-	TGChat int64
+	TGChat *int64 `gorm:"uniqueIndex"`
 
-	Expiration time.Time
-	Active     bool
+	ExpiredAt time.Time
+	Active    bool
 }

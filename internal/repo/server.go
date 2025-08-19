@@ -24,9 +24,18 @@ func (r *ServerRepository) FindAll() ([]*models.Server, error) {
 	return s, nil
 }
 
-func (r *ServerRepository) FindByRegionAll(region string) ([]*models.Server, error) {
+func (r *ServerRepository) FindByRegion(region string) ([]*models.Server, error) {
 	var s []*models.Server
-	if err := r.db.Find(&s).Where("region = ?", region).Error; err != nil {
+	if err := r.db.Where("region = ?", region).Find(&s).Error; err != nil {
+		return nil, err
+	}
+
+	return s, nil
+}
+
+func (r *ServerRepository) FindByID(id int64) (*models.Server, error) {
+	var s *models.Server
+	if err := r.db.First(&s, id).Error; err != nil {
 		return nil, err
 	}
 
