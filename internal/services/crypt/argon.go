@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 
+	"go.uber.org/zap"
 	"golang.org/x/crypto/argon2"
 )
 
@@ -21,15 +22,18 @@ type Argon2idParams struct {
 
 type ArgonService struct {
 	params *Argon2idParams
+	logger *zap.Logger
 }
 
-func NewArgonService(params *Argon2idParams) *ArgonService {
-	return &ArgonService{params}
+func NewArgonService(params *Argon2idParams, logger *zap.Logger) *ArgonService {
+	return &ArgonService{params, logger}
 }
 
 func (s *ArgonService) GenerateHash(password string) (string, error) {
+	s.logger.Debug("generating hash", zap.Int("password_length", len(password)))
 	salt := make([]byte, s.params.SaltLength)
 	if _, err := rand.Read(salt); err != nil {
+		s.logger.Error("failed to generate salt", zap.Error(err))
 		return "", err
 	}
 
@@ -55,13 +59,19 @@ func (s *ArgonService) GenerateHash(password string) (string, error) {
 		b64Hash,
 	)
 
+	s.logger.Info("hash generated",
+		zap.Int("salt_length", int(s.params.SaltLength)),
+		zap.Int("key_length", int(s.params.KeyLength)),
+	)
 	return encodedHash, nil
 
 }
 
 func (s *ArgonService) ComparePasswordAndHash(password, encodedHash string) (bool, error) {
+	s.logger.Debug("comparing password and hash", zap.Int("password_length", len(password)))
 	params, salt, hash, err := decodeHash(encodedHash)
 	if err != nil {
+		s.logger.Error("failed to decode hash", zap.Error(err))
 		return false, err
 	}
 
@@ -75,8 +85,10 @@ func (s *ArgonService) ComparePasswordAndHash(password, encodedHash string) (boo
 	)
 
 	if subtle.ConstantTimeCompare(hash, otherHash) == 1 {
+		s.logger.Info("password match", zap.Int("key_length", int(params.KeyLength)))
 		return true, nil
 	}
+	s.logger.Warn("password does not match")
 	return false, nil
 
 }

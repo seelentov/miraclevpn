@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"net/http"
 	"strings"
 
 	"miraclevpn/internal/services/crypt"
@@ -9,20 +8,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func AuthMiddleware(jwtSrv *crypt.JwtService) gin.HandlerFunc {
+func SetUserIDMiddleware(jwtSrv *crypt.JwtService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		authHeader := ctx.GetHeader("Authorization")
-		if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Пользователь не авторизован"})
-			return
+		if authHeader != "" && !strings.HasPrefix(authHeader, "Bearer 0") && strings.HasPrefix(authHeader, "Bearer ") {
+			tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
+			claims, err := jwtSrv.ParseToken(tokenStr)
+			if err == nil && claims.UserID != "" {
+				ctx.Set("user_id", claims.UserID)
+			}
 		}
-		tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
-		claims, err := jwtSrv.ParseToken(tokenStr)
-		if err != nil {
-			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Неверный токен"})
-			return
-		}
-		ctx.Set("user_id", claims.UserID)
 		ctx.Next()
 	}
 }

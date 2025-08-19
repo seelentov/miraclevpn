@@ -37,7 +37,7 @@ func (c *AuthController) PostLogin(ctx *gin.Context) {
 		} else if errors.Is(err, auth.ErrWrongPassword) {
 			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Неверный логин или пароль"})
 		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сервера"})
+			panic(err)
 		}
 		return
 	}
@@ -63,7 +63,7 @@ func (c *AuthController) PostRegister(ctx *gin.Context) {
 		} else if errors.Is(err, auth.ErrNotEqualPasswords) {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Пароли не совпадают"})
 		} else {
-			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сервера"})
+			panic(err)
 		}
 		return
 	}

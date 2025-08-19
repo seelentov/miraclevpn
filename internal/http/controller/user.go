@@ -23,15 +23,14 @@ func (c *UserController) GetUser(ctx *gin.Context) {
 	userID := ctx.Param("user_id")
 	userIDInt, err := strconv.ParseInt(userID, 10, 64)
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сервера"})
-		return
+		panic(err)
 	}
 	u, err := c.srv.GetUserByID(userIDInt)
 	if err != nil {
 		if errors.Is(err, user.ErrNotFound) {
 			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Пользователь не найден"})
 		} else {
-			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сервера"})
+			panic(err)
 		}
 		return
 	}
@@ -46,8 +45,7 @@ func (c *UserController) PostActivate(ctx *gin.Context) {
 	userID := ctx.Param("user_id")
 	userIDInt, err := strconv.ParseInt(userID, 10, 64)
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сервера"})
-		return
+		panic(err)
 	}
 
 	var req PostActivateReq
@@ -60,9 +58,8 @@ func (c *UserController) PostActivate(ctx *gin.Context) {
 		if err == user.ErrWrongCode {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Неверный код активации"})
 		} else {
-			ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сервера"})
+			panic(err)
 		}
-		return
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "Пользователь успешно активирован"})
 }

@@ -21,8 +21,7 @@ func NewServerController(srv *servers.ServersService) *ServerController {
 func (c *ServerController) GetServers(ctx *gin.Context) {
 	servers, err := c.srv.GetAllServers()
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сервера"})
-		return
+		panic(err)
 	}
 	ctx.JSON(http.StatusOK, servers)
 }
@@ -35,8 +34,7 @@ func (c *ServerController) GetServersByRegion(ctx *gin.Context) {
 	}
 	servers, err := c.srv.GetServersByRegion(region)
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сервера"})
-		return
+		panic(err)
 	}
 	ctx.JSON(http.StatusOK, servers)
 }
@@ -45,8 +43,7 @@ func (c *ServerController) GetServer(ctx *gin.Context) {
 	userID := ctx.Param("user_id")
 	userIDInt, err := strconv.ParseInt(userID, 10, 64)
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сервера"})
-		return
+		panic(err)
 	}
 
 	id := ctx.Param("id")
@@ -56,18 +53,15 @@ func (c *ServerController) GetServer(ctx *gin.Context) {
 	}
 	idInt, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сервера"})
-		return
+		panic(err)
 	}
 	server, err := c.srv.GetServerByID(idInt)
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сервера"})
-		return
+		panic(err)
 	}
 	config, err := c.srv.GetConfig(userIDInt, idInt)
 	if err != nil {
-		ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Ошибка сервера"})
-		return
+		panic(err)
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"server": server, "config": config})

@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -26,6 +27,8 @@ type AuthService struct {
 	senderSrv *sender.TgService
 
 	jwtDuration time.Duration
+
+	logger *zap.Logger
 }
 
 func NewAuthService(userRepo *repo.UserRepository, veriRepo *repo.VerifierRepository, senderSrv *sender.TgService, jwtSrv *crypt.JwtService, jwtDuration time.Duration) *AuthService {
@@ -41,6 +44,7 @@ func NewAuthService(userRepo *repo.UserRepository, veriRepo *repo.VerifierReposi
 func (s *AuthService) Authenticate(phone, password string) (string, error) {
 	user, err := s.userRepo.FindByPhone(phone)
 	if err != nil {
+		s.logger.Error("failed to find user by phone", zap.String("phone", phone), zap.Error(err))
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return "", ErrNotFound
 		} else {
@@ -49,49 +53,63 @@ func (s *AuthService) Authenticate(phone, password string) (string, error) {
 	}
 
 	if !s.userRepo.CheckPassword(user.ID, password) {
+		s.logger.Warn("wrong password", zap.String("phone", phone), zap.Int64("user_id", user.ID))
 		return "", ErrWrongPassword
 	}
 
 	token, err := s.jwtSrv.GenerateToken(strconv.Itoa(int(user.ID)), s.jwtDuration)
 	if err != nil {
+		s.logger.Error("failed to generate token", zap.Int64("user_id", user.ID), zap.Error(err))
 		return "", err
 	}
 
+	s.logger.Info("user authenticated", zap.Int64("user_id", user.ID), zap.String("phone", phone))
 	return token, nil
 }
 
 func (s *AuthService) SignIn(phone, password string, checkPassword string) (string, error) {
 	if password != checkPassword {
+		s.logger.Warn("passwords not equal", zap.String("phone", phone))
 		return "", ErrNotEqualPasswords
 	}
 
 	_, err := s.userRepo.FindByPhone(phone)
 	if err == nil {
+		s.logger.Warn("user already exists", zap.String("phone", phone))
 		return "", ErrAlreadyExists
 	}
 
-	if errors.Is(err, gorm.ErrRecordNotFound) {
+	if !errors.Is(err, gorm.ErrRecordNotFound) {
+		s.logger.Error("unexpected error on find by phone", zap.String("phone", phone), zap.Error(err))
 		return "", err
 	}
 
 	u, err := s.userRepo.Create(phone, password)
 	if err != nil {
+		s.logger.Error("failed to create user", zap.String("phone", phone), zap.Error(err))
 		return "", err
 	}
+	s.logger.Info("user created", zap.Int64("user_id", u.ID), zap.String("phone", phone))
 
 	code, err := s.veriRepo.Create(u.ID, time.Now().Add(15*time.Minute))
 	if err != nil {
+		s.logger.Error("failed to create verifier code", zap.Int64("user_id", u.ID), zap.Error(err))
 		return "", err
 	}
+	s.logger.Info("verifier code created", zap.Int64("user_id", u.ID), zap.Int32("code", code))
 
 	if err := s.senderSrv.SendMessage(u.ID, sender.VerifyMessage(code)); err != nil {
+		s.logger.Error("failed to send verification message", zap.Int64("user_id", u.ID), zap.Error(err))
 		return "", err
 	}
+	s.logger.Info("verification message sent", zap.Int64("user_id", u.ID))
 
 	token, err := s.jwtSrv.GenerateToken(strconv.Itoa(int(u.ID)), s.jwtDuration)
 	if err != nil {
+		s.logger.Error("failed to generate token after registration", zap.Int64("user_id", u.ID), zap.Error(err))
 		return "", err
 	}
 
+	s.logger.Info("user registered and token generated", zap.Int64("user_id", u.ID), zap.String("phone", phone))
 	return token, nil
 }
