@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 type UserController struct {
@@ -44,8 +45,13 @@ type PostResetSendReq struct {
 func (c *UserController) PostResetSend(ctx *gin.Context) {
 	var req PostResetSendReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": HandleValidation(ve, req)})
+			return
+		}
+
+		panic(err)
 	}
 
 	if _, err := c.srv.ResetPasswordSend(req.Phone); err != nil {
@@ -65,8 +71,13 @@ type PostResetVerifyReq struct {
 func (c *UserController) PostResetVerify(ctx *gin.Context) {
 	var req PostResetVerifyReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": HandleValidation(ve, req)})
+			return
+		}
+
+		panic(err)
 	}
 
 	if err := c.srv.ResetPasswordVerify(req.Phone, req.Code, req.NewPassword, req.NewPasswordVerify); err != nil {

@@ -6,11 +6,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Recovery() gin.HandlerFunc {
+func Recovery(debug bool) gin.HandlerFunc {
 	return gin.RecoveryWithWriter(gin.DefaultErrorWriter, func(ctx *gin.Context, err interface{}) {
-		ctx.JSON(http.StatusInternalServerError, gin.H{
-			"error": "Внутренняя ошибка сервера",
-		})
+		if debug {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": err,
+			})
+		} else {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Внутренняя ошибка сервера",
+			})
+		}
+
 		ctx.Abort()
 	})
 }

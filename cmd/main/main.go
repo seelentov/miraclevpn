@@ -105,7 +105,7 @@ func main() {
 	daemon.Start()
 
 	r := gin.Default()
-	r.Use(middleware.Recovery())
+	r.Use(middleware.Recovery(debug))
 	r.NoRoute(middleware.NotFound())
 	r.Use(middleware.RefreshTokenMiddleware(jwtSrv, time.Duration(jwtDuration)*time.Minute))
 	r.Use(middleware.SetUserIDMiddleware(jwtSrv))

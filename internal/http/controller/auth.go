@@ -9,6 +9,7 @@ import (
 	"miraclevpn/internal/services/crypt"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 type AuthController struct {
@@ -31,8 +32,13 @@ type PostLoginReq struct {
 func (c *AuthController) PostLogin(ctx *gin.Context) {
 	var req PostLoginReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": HandleValidation(ve, req)})
+			return
+		}
+
+		panic(err)
 	}
 	token, err := c.srv.Authenticate(req.Phone, req.Password)
 	if err != nil {
@@ -57,8 +63,13 @@ type PostRegisterReq struct {
 func (c *AuthController) PostRegister(ctx *gin.Context) {
 	var req PostRegisterReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": HandleValidation(ve, req)})
+			return
+		}
+
+		panic(err)
 	}
 	token, tgLink, err := c.srv.SignIn(req.Phone, req.Password, req.CheckPassword)
 	if err != nil {
@@ -82,8 +93,13 @@ type PostActivateReq struct {
 func (c *AuthController) PostActivate(ctx *gin.Context) {
 	var req PostActivateReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": HandleValidation(ve, req)})
+			return
+		}
+
+		panic(err)
 	}
 
 	claims, err := c.jwt.ParseToken(req.TgToken)
