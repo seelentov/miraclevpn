@@ -36,7 +36,12 @@ func (c *Client) GetStatus(host string, port int) (*vpn.Status, error) {
 	status.Online = true
 
 	// Get OpenVPN status
-	cmd := exec.Command("ssh", fmt.Sprintf("%s@%s", c.username, host), "cat "+c.statusPath)
+	cmd := exec.Command(
+		"ssh",
+		"-o StrictHostKeyChecking=no",
+		fmt.Sprintf("%s@%s", c.username, host),
+		"cat "+c.statusPath,
+	)
 
 	output, err := cmd.Output()
 	if err != nil {
@@ -53,21 +58,40 @@ func (c *Client) GetStatus(host string, port int) (*vpn.Status, error) {
 }
 
 func (c *Client) CreateUser(host string, username string) (string, error) {
+	username = strings.ReplaceAll(username, "+", "_")
+
 	cmd := exec.Command(
 		"ssh",
+		"-o", "StrictHostKeyChecking=no",
 		fmt.Sprintf("%s@%s", c.username, host),
-		fmt.Sprintf("sudo %s %s", c.createUserFile, username),
+		"cat", fmt.Sprintf("/etc/openvpn/server/easy-rsa/%s.ovpn", username),
 	)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", fmt.Errorf("create user failed: %v, output: %s", err, string(output))
+		cmd := exec.Command(
+			"ssh",
+			"-o", "StrictHostKeyChecking=no",
+			fmt.Sprintf("%s@%s", c.username, host),
+			"sudo", c.createUserFile, username,
+		)
+		output, err := cmd.CombinedOutput()
+		if err != nil {
+			return "", fmt.Errorf("create user failed: %v, output: %s", err, string(output))
+		}
+
+		cmd = exec.Command(
+			"ssh",
+			"-o", "StrictHostKeyChecking=no",
+			fmt.Sprintf("%s@%s", c.username, host),
+			"cat", fmt.Sprintf("/etc/openvpn/server/easy-rsa/%s.ovpn", username),
+		)
+		output, err = cmd.CombinedOutput()
+		if err != nil {
+			return "", fmt.Errorf("failed to get ovpn file after creation: %v, output: %s", err, string(output))
+		}
+
+		return string(output), nil
 	}
-
-	i := strings.Index(string(output), `client
-dev tun
-proto udp`)
-
-	output = output[i:]
 
 	return string(output), nil
 }
@@ -75,8 +99,9 @@ proto udp`)
 func (c *Client) DeleteUser(host string, username string) error {
 	cmd := exec.Command(
 		"ssh",
+		"-o", "StrictHostKeyChecking=no",
 		fmt.Sprintf("%s@%s", c.username, host),
-		fmt.Sprintf("sudo %s %s", c.revokeUserFile, username),
+		"sudo", c.revokeUserFile, username,
 	)
 	output, err := cmd.CombinedOutput()
 	if err != nil {

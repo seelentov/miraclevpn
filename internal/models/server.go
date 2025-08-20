@@ -3,8 +3,9 @@ package models
 type Server struct {
 	ID int64 `gorm:"primaryKey"`
 
-	Host   string `gorm:"uniqueIndex"`
-	Region string
+	Host    string `gorm:"uniqueIndex"`
+	Region  string
+	Service string
 
 	Active bool
 }

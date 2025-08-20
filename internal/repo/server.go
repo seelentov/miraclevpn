@@ -34,10 +34,18 @@ func (r *ServerRepository) FindByRegion(region string) ([]*models.Server, error)
 }
 
 func (r *ServerRepository) FindByID(id int64) (*models.Server, error) {
-	var s *models.Server
+	var s models.Server
 	if err := r.db.First(&s, id).Error; err != nil {
 		return nil, err
 	}
 
-	return s, nil
+	return &s, nil
+}
+
+func (r *ServerRepository) FindAllRegions() ([]string, error) {
+	var regions []string
+	if err := r.db.Model(&models.Server{}).Distinct().Pluck("region", &regions).Error; err != nil {
+		return nil, err
+	}
+	return regions, nil
 }

@@ -3,7 +3,6 @@ package controller
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"miraclevpn/internal/services/auth"
 	"miraclevpn/internal/services/crypt"
@@ -25,7 +24,7 @@ func NewAuthController(srv *auth.AuthService, jwt *crypt.JwtService) *AuthContro
 }
 
 type PostLoginReq struct {
-	Phone    string `json:"phone" binding:"required"`
+	Username string `json:"username" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
@@ -40,7 +39,7 @@ func (c *AuthController) PostLogin(ctx *gin.Context) {
 
 		panic(err)
 	}
-	token, err := c.srv.Authenticate(req.Phone, req.Password)
+	token, tgLink, err := c.srv.Authenticate(req.Username, req.Password)
 	if err != nil {
 		if errors.Is(err, auth.ErrNotFound) {
 			ctx.JSON(http.StatusNotFound, gin.H{"error": "Пользователь не найден"})
@@ -51,12 +50,20 @@ func (c *AuthController) PostLogin(ctx *gin.Context) {
 		}
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"token": token})
+
+	res := gin.H{"token": token, "active": true}
+
+	if tgLink != "" {
+		res["tg_link"] = tgLink
+		res["active"] = false
+	}
+
+	ctx.JSON(http.StatusOK, res)
 }
 
 type PostRegisterReq struct {
-	Phone         string `json:"phone" binding:"required"`
-	Password      string `json:"password" binding:"required"`
+	Username      string `json:"username" binding:"required"`
+	Password      string `json:"password" binding:"required,min=8,max=64"`
 	CheckPassword string `json:"check_password" binding:"required"`
 }
 
@@ -71,51 +78,17 @@ func (c *AuthController) PostRegister(ctx *gin.Context) {
 
 		panic(err)
 	}
-	token, tgLink, err := c.srv.SignIn(req.Phone, req.Password, req.CheckPassword)
+	token, tgLink, err := c.srv.SignUp(req.Username, req.Password, req.CheckPassword)
 	if err != nil {
 		if errors.Is(err, auth.ErrAlreadyExists) {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Пользователь с этим номером телефона уже существует"})
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": gin.H{"username": "Пользователь с этим логином уже существует"}})
+			return
 		} else if errors.Is(err, auth.ErrNotEqualPasswords) {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Пароли не совпадают"})
-		} else {
-			panic(err)
-		}
-		return
-	}
-	ctx.JSON(http.StatusOK, gin.H{"token": token, "tg_link": tgLink})
-}
-
-type PostActivateReq struct {
-	TgToken string `json:"tg_token" binding:"required"`
-	ChatID  int64  `json:"chat_id" binding:"required"`
-}
-
-func (c *AuthController) PostActivate(ctx *gin.Context) {
-	var req PostActivateReq
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		var ve validator.ValidationErrors
-		if errors.As(err, &ve) {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": HandleValidation(ve, req)})
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": gin.H{"password": "Пароли не совпадают", "check_password": "Пароли не совпадают"}})
 			return
 		}
 
 		panic(err)
 	}
-
-	claims, err := c.jwt.ParseToken(req.TgToken)
-	if err != nil || claims.UserID == "" {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Неверный токен"})
-		return
-	}
-
-	userID, err := strconv.ParseInt(claims.UserID, 10, 64)
-	if err != nil {
-		panic(err)
-	}
-
-	if err := c.srv.Activate(userID, req.ChatID); err != nil {
-		panic(err)
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{"message": "Пользователь успешно активирован"})
+	ctx.JSON(http.StatusOK, gin.H{"token": token, "tg_link": tgLink})
 }

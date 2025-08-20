@@ -21,11 +21,12 @@ func NewUserController(srv *user.UserService) *UserController {
 }
 
 func (c *UserController) GetUser(ctx *gin.Context) {
-	userID := ctx.Param("user_id")
-	userIDInt, err := strconv.ParseInt(userID, 10, 64)
+	userID, _ := ctx.Get("user_id")
+	userIDInt, err := strconv.ParseInt(userID.(string), 10, 64)
 	if err != nil {
 		panic(err)
 	}
+
 	u, err := c.srv.GetUserByID(userIDInt)
 	if err != nil {
 		if errors.Is(err, user.ErrNotFound) {
@@ -38,61 +39,60 @@ func (c *UserController) GetUser(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, u)
 }
 
-type PostResetSendReq struct {
-	Phone string `json:"phone" binding:"required"`
+type ChangePasswordSendReq struct {
+	Username string `json:"username" binding:"required"`
 }
 
-func (c *UserController) PostResetSend(ctx *gin.Context) {
-	var req PostResetSendReq
+func (c *UserController) PostChangePasswordSend(ctx *gin.Context) {
+	var req ChangePasswordSendReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		var ve validator.ValidationErrors
 		if errors.As(err, &ve) {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": HandleValidation(ve, req)})
 			return
 		}
+		panic(err)
+	}
+
+	if err := c.srv.ResetPasswordSend(req.Username); err != nil {
 
 		panic(err)
 	}
 
-	if _, err := c.srv.ResetPasswordSend(req.Phone); err != nil {
-		panic(err)
-	}
-
-	ctx.JSON(http.StatusOK, gin.H{"message": "Код для восстановления пароля отправлен в Telegram"})
+	ctx.JSON(http.StatusOK, gin.H{"messsage": "Код для смены пароля отправлен"})
 }
 
-type PostResetVerifyReq struct {
-	Phone             string `json:"phone" binding:"required"`
+type ChangePasswordVerifyReq struct {
+	Username          string `json:"username" binding:"required"`
 	Code              int32  `json:"code" binding:"required"`
-	NewPassword       string `json:"new_password" binding:"required"`
+	NewPassword       string `json:"new_password" binding:"required,min=8,max=64"`
 	NewPasswordVerify string `json:"new_password_verify" binding:"required"`
 }
 
-func (c *UserController) PostResetVerify(ctx *gin.Context) {
-	var req PostResetVerifyReq
+func (c *UserController) PostChangePasswordVerify(ctx *gin.Context) {
+	var req ChangePasswordVerifyReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		var ve validator.ValidationErrors
 		if errors.As(err, &ve) {
 			ctx.JSON(http.StatusBadRequest, gin.H{"error": HandleValidation(ve, req)})
 			return
 		}
-
 		panic(err)
 	}
 
-	if err := c.srv.ResetPasswordVerify(req.Phone, req.Code, req.NewPassword, req.NewPasswordVerify); err != nil {
-		if errors.Is(err, user.ErrPasswordNotEqual) {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Пароли не совпадают"})
+	if err := c.srv.ResetPasswordVerify(req.Username, req.Code, req.NewPassword, req.NewPasswordVerify); err != nil {
+		if errors.Is(err, user.ErrPasswordDuplicate) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": "Новый пароль не должен совпадать с текущим"})
+			return
+		} else if errors.Is(err, user.ErrPasswordNotEqual) {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": gin.H{"password": "Пароли не совпадают", "new_password_verify": "Пароли не совпадают"}})
+			return
+		} else if errors.Is(err, user.ErrWrongCode) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"error": gin.H{"code": "Неверный код"}})
 			return
 		}
-
-		if errors.Is(err, user.ErrWrongCode) {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Неверный код"})
-			return
-		}
-
 		panic(err)
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Пароль успешно сброшен"})
+	ctx.JSON(http.StatusOK, gin.H{"message": "Пароль успешно изменен"})
 }

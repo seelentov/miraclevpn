@@ -1,11 +1,17 @@
 package servers
 
 import (
+	"errors"
 	"miraclevpn/internal/models"
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/vpn"
 
 	"go.uber.org/zap"
+	"gorm.io/gorm"
+)
+
+var (
+	ErrNotFound = errors.New("server not found")
 )
 
 type ServersService struct {
@@ -62,7 +68,7 @@ func (s *ServersService) GetServerByID(id int64) (*models.Server, error) {
 func (s *ServersService) GetConfig(userID int64, serverID int64) (string, error) {
 	s.logger.Debug("getting config", zap.Int64("user_id", userID), zap.Int64("server_id", serverID))
 	us, err := s.ursSrvRepo.FindByUserIDServerID(userID, serverID)
-	if err != nil {
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		s.logger.Error("failed to find user-server config", zap.Int64("user_id", userID), zap.Int64("server_id", serverID), zap.Error(err))
 		return "", err
 	}
@@ -83,10 +89,10 @@ func (s *ServersService) GetConfig(userID int64, serverID int64) (string, error)
 		return "", err
 	}
 
-	s.logger.Debug("creating VPN user", zap.String("host", srv.Host), zap.String("phone", usr.Phone))
-	config, err := s.VpnService.CreateUser(srv.Host, usr.Phone)
+	s.logger.Debug("creating VPN user", zap.String("host", srv.Host), zap.String("username", usr.Username))
+	config, err := s.VpnService.CreateUser(srv.Host, usr.Username)
 	if err != nil {
-		s.logger.Error("failed to create VPN user", zap.String("host", srv.Host), zap.String("phone", usr.Phone), zap.Error(err))
+		s.logger.Error("failed to create VPN user", zap.String("host", srv.Host), zap.String("username", usr.Username), zap.Error(err))
 		return "", err
 	}
 
@@ -97,4 +103,15 @@ func (s *ServersService) GetConfig(userID int64, serverID int64) (string, error)
 
 	s.logger.Debug("vpn config created and saved", zap.Int64("user_id", userID), zap.Int64("server_id", serverID))
 	return config, nil
+}
+
+func (s *ServersService) GetRegions() ([]string, error) {
+	s.logger.Debug("getting all regions")
+	regions, err := s.srvRepo.FindAllRegions()
+	if err != nil {
+		s.logger.Error("failed to get all regions", zap.Error(err))
+		return nil, err
+	}
+	s.logger.Debug("all regions fetched", zap.Int("count", len(regions)))
+	return regions, nil
 }

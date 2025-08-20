@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"miraclevpn/internal/services/servers"
 	"net/http"
 	"strconv"
@@ -40,8 +41,8 @@ func (c *ServerController) GetServersByRegion(ctx *gin.Context) {
 }
 
 func (c *ServerController) GetServer(ctx *gin.Context) {
-	userID := ctx.Param("user_id")
-	userIDInt, err := strconv.ParseInt(userID, 10, 64)
+	userID, _ := ctx.Get("user_id")
+	userIDInt, err := strconv.ParseInt(userID.(string), 10, 64)
 	if err != nil {
 		panic(err)
 	}
@@ -57,6 +58,10 @@ func (c *ServerController) GetServer(ctx *gin.Context) {
 	}
 	server, err := c.srv.GetServerByID(idInt)
 	if err != nil {
+		if errors.Is(err, servers.ErrNotFound) {
+			ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Сервер не найден"})
+			return
+		}
 		panic(err)
 	}
 	config, err := c.srv.GetConfig(userIDInt, idInt)
@@ -65,4 +70,12 @@ func (c *ServerController) GetServer(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"server": server, "config": config})
+}
+
+func (c *ServerController) GetRegions(ctx *gin.Context) {
+	regions, err := c.srv.GetRegions()
+	if err != nil {
+		panic(err)
+	}
+	ctx.JSON(http.StatusOK, regions)
 }

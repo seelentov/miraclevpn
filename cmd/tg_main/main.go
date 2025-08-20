@@ -55,7 +55,7 @@ func main() {
 	userRepo := repo.NewUserRepository(gormDB, argonSrv)
 	jwtSrv := crypt.NewJwtService(jwtSecret, nil)
 
-	daemon := tg_daemon.NewTgDaemon(botToken, jwtSrv, userRepo)
+	daemon := tg_daemon.NewTgDaemon(botToken, jwtSrv, userRepo, logger.Logger)
 	daemon.Start()
 
 	log.Println("Telegram daemon started. Press Ctrl+C to exit.")

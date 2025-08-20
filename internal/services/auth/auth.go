@@ -32,65 +32,78 @@ type AuthService struct {
 	logger *zap.Logger
 }
 
-func NewAuthService(userRepo *repo.UserRepository, veriRepo *repo.VerifierRepository, senderSrv *sender.TgService, jwtSrv *crypt.JwtService, jwtDuration time.Duration) *AuthService {
+func NewAuthService(userRepo *repo.UserRepository, veriRepo *repo.VerifierRepository, senderSrv *sender.TgService, jwtSrv *crypt.JwtService, jwtDuration time.Duration, logger *zap.Logger) *AuthService {
 	return &AuthService{
 		userRepo:    userRepo,
 		veriRepo:    veriRepo,
 		senderSrv:   senderSrv,
 		jwtSrv:      jwtSrv,
+		logger:      logger,
 		jwtDuration: jwtDuration,
 	}
 }
 
-func (s *AuthService) Authenticate(phone, password string) (string, error) {
-	user, err := s.userRepo.FindByPhone(phone)
+func (s *AuthService) Authenticate(username, password string) (token string, tgLink string, err error) {
+	user, err := s.userRepo.FindByUsername(username)
 	if err != nil {
-		s.logger.Error("failed to find user by phone", zap.String("phone", phone), zap.Error(err))
+		s.logger.Error("failed to find user by username", zap.String("username", username), zap.Error(err))
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return "", ErrNotFound
+			return "", "", ErrNotFound
 		} else {
-			return "", err
+			return "", "", err
 		}
 	}
 
 	if !s.userRepo.CheckPassword(user.ID, password) {
-		s.logger.Warn("wrong password", zap.String("phone", phone), zap.Int64("user_id", user.ID))
-		return "", ErrWrongPassword
+		s.logger.Warn("wrong password", zap.String("username", username), zap.Int64("user_id", user.ID))
+		return "", "", ErrWrongPassword
 	}
 
-	token, err := s.jwtSrv.GenerateToken(strconv.Itoa(int(user.ID)), s.jwtDuration)
+	token, err = s.jwtSrv.GenerateToken(strconv.Itoa(int(user.ID)), s.jwtDuration)
 	if err != nil {
 		s.logger.Error("failed to generate token", zap.Int64("user_id", user.ID), zap.Error(err))
-		return "", err
+		return "", "", err
 	}
 
-	s.logger.Debug("user authenticated", zap.Int64("user_id", user.ID), zap.String("phone", phone))
-	return token, nil
+	if !user.Active {
+		s.logger.Debug("user not activated", zap.Int64("user_id", user.ID), zap.String("username", username))
+
+		tgToken, err := s.jwtSrv.GenerateToken(strconv.Itoa(int(user.ID)), time.Minute*2)
+		if err != nil {
+			s.logger.Error("failed to generate token after registration", zap.Int64("user_id", user.ID), zap.Error(err))
+			return "", "", err
+		}
+
+		tgLink = fmt.Sprintf("https://t.me/%s?text=%s", s.senderSrv.GetName(), tgToken)
+	}
+
+	s.logger.Debug("user authenticated", zap.Int64("user_id", user.ID), zap.String("username", username))
+	return token, tgLink, nil
 }
 
-func (s *AuthService) SignIn(phone, password string, checkPassword string) (token string, tgLink string, err error) {
+func (s *AuthService) SignUp(username, password string, checkPassword string) (token string, tgLink string, err error) {
 	if password != checkPassword {
-		s.logger.Warn("passwords not equal", zap.String("phone", phone))
+		s.logger.Warn("passwords not equal", zap.String("username", username))
 		return "", "", ErrNotEqualPasswords
 	}
 
-	_, err = s.userRepo.FindByPhone(phone)
+	_, err = s.userRepo.FindByUsername(username)
 	if err == nil {
-		s.logger.Warn("user already exists", zap.String("phone", phone))
+		s.logger.Warn("user already exists", zap.String("username", username))
 		return "", "", ErrAlreadyExists
 	}
 
 	if !errors.Is(err, gorm.ErrRecordNotFound) {
-		s.logger.Error("unexpected error on find by phone", zap.String("phone", phone), zap.Error(err))
+		s.logger.Error("unexpected error on find by username", zap.String("username", username), zap.Error(err))
 		return "", "", err
 	}
 
-	u, err := s.userRepo.Create(phone, password)
+	u, err := s.userRepo.Create(username, password)
 	if err != nil {
-		s.logger.Error("failed to create user", zap.String("phone", phone), zap.Error(err))
+		s.logger.Error("failed to create user", zap.String("username", username), zap.Error(err))
 		return "", "", err
 	}
-	s.logger.Debug("user created", zap.Int64("user_id", u.ID), zap.String("phone", phone))
+	s.logger.Debug("user created", zap.Int64("user_id", u.ID), zap.String("username", username))
 
 	code, err := s.veriRepo.Create(u.ID, time.Now().Add(15*time.Minute))
 	if err != nil {
@@ -111,7 +124,7 @@ func (s *AuthService) SignIn(phone, password string, checkPassword string) (toke
 		return "", "", err
 	}
 
-	s.logger.Debug("user registered and token generated", zap.Int64("user_id", u.ID), zap.String("phone", phone))
+	s.logger.Debug("user registered and token generated", zap.Int64("user_id", u.ID), zap.String("username", username))
 
 	tgLink = fmt.Sprintf("https://t.me/%s?text=%s", s.senderSrv.GetName(), tgToken)
 	return token, tgLink, nil

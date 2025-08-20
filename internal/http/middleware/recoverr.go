@@ -10,7 +10,7 @@ func Recovery(debug bool) gin.HandlerFunc {
 	return gin.RecoveryWithWriter(gin.DefaultErrorWriter, func(ctx *gin.Context, err interface{}) {
 		if debug {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"error": err,
+				"error": err.(error).Error(),
 			})
 		} else {
 			ctx.JSON(http.StatusInternalServerError, gin.H{

@@ -18,42 +18,42 @@ func NewUserRepository(db *gorm.DB, crypt cryptt.CryptService) *UserRepository {
 }
 
 func (r *UserRepository) FindByID(userID int64) (*models.User, error) {
-	var u *models.User
+	var u models.User
 
-	if err := r.db.Find(u, userID).Error; err != nil {
+	if err := r.db.Find(&u, userID).Error; err != nil {
 		return nil, err
 	}
 
-	return u, nil
+	return &u, nil
 }
 
-func (r *UserRepository) FindByPhone(phone string) (*models.User, error) {
-	var u *models.User
+func (r *UserRepository) FindByUsername(username string) (*models.User, error) {
+	var u models.User
 
-	if err := r.db.Where("phone = ?", phone).First(u).Error; err != nil {
+	if err := r.db.Where("username = ?", username).First(&u).Error; err != nil {
 		return nil, err
 	}
 
-	return u, nil
+	return &u, nil
 }
 
-func (r *UserRepository) Create(phone string, password string) (*models.User, error) {
+func (r *UserRepository) Create(username string, password string) (*models.User, error) {
 	hashedPassword, err := r.crypt.GenerateHash(password)
 	if err != nil {
 		return nil, err
 	}
 
-	u := &models.User{
-		Phone:    phone,
+	u := models.User{
+		Username: username,
 		Password: hashedPassword,
 		Active:   false,
 	}
 
-	if err := r.db.Save(u).Error; err != nil {
+	if err := r.db.Save(&u).Error; err != nil {
 		return nil, err
 	}
 
-	return u, nil
+	return &u, nil
 }
 
 func (r *UserRepository) SetPassword(userID int64, newPassword string) error {

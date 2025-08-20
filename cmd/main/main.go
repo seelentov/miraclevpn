@@ -19,7 +19,7 @@ import (
 	"miraclevpn/internal/services/sender"
 	"miraclevpn/internal/services/servers"
 	"miraclevpn/internal/services/user"
-	"miraclevpn/internal/services/vpn"
+	"miraclevpn/pkg/ovpn"
 	"miraclevpn/pkg/tg"
 
 	"github.com/gin-gonic/gin"
@@ -45,6 +45,11 @@ func main() {
 	logRetain, _ := strconv.Atoi(os.Getenv("LOG_RETAIN"))
 	debug := os.Getenv("DEBUG") == "true"
 	jwtSecret := os.Getenv("JWT_SECRET")
+
+	sshUser := os.Getenv("SSH_USER")
+	sshStatusPath := os.Getenv("SSH_STATUS_PATH")
+	sshCreateUserFile := os.Getenv("SSH_CREATE_USER_FILE")
+	sshRevokeUserFile := os.Getenv("SSH_REVOKE_USER_FILE")
 
 	jwtDuration := math.MaxInt32
 	if os.Getenv("JWT_DURATION_MIN") != "" && os.Getenv("JWT_DURATION_MIN") != "0" {
@@ -87,12 +92,12 @@ func main() {
 	tgSender := tg.NewTgClient(tgToken, tgName)
 	tgSrv := sender.NewTgService(userRepo, tgSender, logger.Logger)
 
-	// VPN сервис (пример, замените на свою реализацию)
-	var vpnSrv vpn.VpnService // Инициализация vpn.Client или другого vpn.VpnService
+	// VPN
+	vpnSrv := ovpn.NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile)
 
 	// Сервисы
-	authSrv := auth.NewAuthService(userRepo, veriRepo, tgSrv, jwtSrv, time.Duration(jwtDuration)*time.Minute)
-	userSrv := user.NewUserService(userRepo, veriRepo, logger.Logger)
+	authSrv := auth.NewAuthService(userRepo, veriRepo, tgSrv, jwtSrv, time.Duration(jwtDuration)*time.Minute, logger.Logger)
+	userSrv := user.NewUserService(userRepo, veriRepo, tgSrv, logger.Logger)
 	serversSrv := servers.NewServersService(userServerRepo, serverRepo, userRepo, vpnSrv, logger.Logger)
 
 	// Контроллеры
@@ -101,13 +106,12 @@ func main() {
 	serverCtrl := controller.NewServerController(serversSrv)
 
 	//Демоны
-	daemon := tg_daemon.NewTgDaemon(tgToken, jwtSrv, userRepo)
+	daemon := tg_daemon.NewTgDaemon(tgToken, jwtSrv, userRepo, logger.Logger)
 	daemon.Start()
 
 	r := gin.Default()
 	r.Use(middleware.Recovery(debug))
 	r.NoRoute(middleware.NotFound())
-	r.Use(middleware.RefreshTokenMiddleware(jwtSrv, time.Duration(jwtDuration)*time.Minute))
 	r.Use(middleware.SetUserIDMiddleware(jwtSrv))
 
 	api := r.Group("/api")
@@ -118,11 +122,16 @@ func main() {
 			{
 				auth.POST("/login", authCtrl.PostLogin)
 				auth.POST("/register", authCtrl.PostRegister)
-				auth.POST("/activate", authCtrl.PostActivate)
+			}
+
+			security := v1.Group("/security")
+			{
+				security.POST("/try-change-password", userCtrl.PostChangePasswordSend)
+				security.POST("/change-password", userCtrl.PostChangePasswordVerify)
 			}
 
 			o := v1.Group("/")
-			o.Use(middleware.RequireUserIDMiddleware())
+			o.Use(middleware.RequireAuthMiddleware(userRepo))
 			{
 				userGroup := o.Group("/user")
 				{
@@ -131,6 +140,7 @@ func main() {
 				serverGroup := o.Group("/server")
 				{
 					serverGroup.GET("/", serverCtrl.GetServers)
+					serverGroup.GET("/region", serverCtrl.GetRegions)
 					serverGroup.GET("/region/:region", serverCtrl.GetServersByRegion)
 					serverGroup.GET("/:id", serverCtrl.GetServer)
 				}
@@ -147,7 +157,7 @@ func main() {
 
 		gormDB.Save(&models.User{
 			ID:        1,
-			Phone:     "+79028608750",
+			Username:  "testuser",
 			Password:  p,
 			TGChat:    nil,
 			Active:    false,
