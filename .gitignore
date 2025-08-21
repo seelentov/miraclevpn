@@ -8,3 +8,5 @@ logs/*
 .vscode
 
 cmd/**/__debug_*
+cmd/test/*
+cmd/test

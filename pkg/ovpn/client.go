@@ -27,15 +27,14 @@ func NewClient(username, statusPath, createUserFile, revokeUserFile string) *Cli
 	}
 }
 
-func (c *Client) GetStatus(host string, port int) (*vpn.Status, error) {
+func (c *Client) GetStatus(host string) (*vpn.Status, error) {
 	status := &vpn.Status{}
-	if err := c.checkServerOnline(host, port); err != nil {
+	if err := c.checkServerOnline(host); err != nil {
 		status.Online = false
-		return status, nil
+		return status, err
 	}
 	status.Online = true
 
-	// Get OpenVPN status
 	cmd := exec.Command(
 		"ssh",
 		"-o StrictHostKeyChecking=no",
@@ -110,15 +109,11 @@ func (c *Client) DeleteUser(host string, username string) error {
 	return nil
 }
 
-func (c *Client) checkServerOnline(ip string, port int) error {
-	cmd := exec.Command("nmap", "-p", strconv.Itoa(port), ip)
+func (c *Client) checkServerOnline(host string) error {
+	cmd := exec.Command("ping", "-c", "1", "-W", "1", host)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("nmap failed: %v", err)
-	}
-
-	if !strings.Contains(string(output), "openvpn") {
-		return fmt.Errorf("port %d is not open", port)
+		return fmt.Errorf("server %s is unreachable: %v\nOutput: %s", host, err, string(output))
 	}
 
 	return nil

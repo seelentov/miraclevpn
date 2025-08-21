@@ -16,7 +16,7 @@ type Status struct {
 }
 
 type VpnService interface {
-	GetStatus(host string, port int) (*Status, error)
+	GetStatus(host string) (*Status, error)
 	CreateUser(host string, username string) (string, error)
 	DeleteUser(host string, username string) error
 }

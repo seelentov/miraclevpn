@@ -18,7 +18,7 @@ type ServersService struct {
 	ursSrvRepo *repo.UserServerRepository
 	srvRepo    *repo.ServerRepository
 	ursRepo    *repo.UserRepository
-	VpnService vpn.VpnService
+	vpnService vpn.VpnService
 	logger     *zap.Logger
 }
 
@@ -90,7 +90,7 @@ func (s *ServersService) GetConfig(userID int64, serverID int64) (string, error)
 	}
 
 	s.logger.Debug("creating VPN user", zap.String("host", srv.Host), zap.String("username", usr.Username))
-	config, err := s.VpnService.CreateUser(srv.Host, usr.Username)
+	config, err := s.vpnService.CreateUser(srv.Host, usr.Username)
 	if err != nil {
 		s.logger.Error("failed to create VPN user", zap.String("host", srv.Host), zap.String("username", usr.Username), zap.Error(err))
 		return "", err

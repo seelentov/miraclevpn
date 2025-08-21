@@ -17,6 +17,8 @@ type TgDaemon struct {
 	userRepo *repo.UserRepository
 
 	logger *zap.Logger
+
+	stopChan chan struct{}
 }
 
 func NewTgDaemon(botToken string, jwtSrv *crypt.JwtService, userRepo *repo.UserRepository, logger *zap.Logger) *TgDaemon {
@@ -25,6 +27,7 @@ func NewTgDaemon(botToken string, jwtSrv *crypt.JwtService, userRepo *repo.UserR
 		jwtSrv:   jwtSrv,
 		userRepo: userRepo,
 		logger:   logger,
+		stopChan: make(chan struct{}),
 	}
 }
 
@@ -80,4 +83,8 @@ func (d *TgDaemon) Start() {
 			bot.Send(msg)
 		}
 	}()
+}
+
+func (d *TgDaemon) Stop() {
+	close(d.stopChan)
 }

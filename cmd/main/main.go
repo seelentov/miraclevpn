@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"math"
+	"miraclevpn/internal/daemon/healthcheck"
 	tg_daemon "miraclevpn/internal/daemon/tg"
 	"miraclevpn/internal/http/middleware"
 	"miraclevpn/internal/models"
@@ -106,8 +107,36 @@ func main() {
 	serverCtrl := controller.NewServerController(serversSrv)
 
 	//Демоны
-	daemon := tg_daemon.NewTgDaemon(tgToken, jwtSrv, userRepo, logger.Logger)
-	daemon.Start()
+	tgDaemon := tg_daemon.NewTgDaemon(tgToken, jwtSrv, userRepo, logger.Logger)
+	tgDaemon.Start()
+	defer tgDaemon.Stop()
+
+	healthCheckIntervalSec := 60
+	h := os.Getenv("HEALTHCHECK_INTERVAL_SEC")
+	if h != "" {
+		healthCheckIntervalSec, err = strconv.Atoi(h)
+		if err != nil || healthCheckIntervalSec <= 0 {
+			logger.Logger.Error("invalid HEALTHCHECK_INTERVAL_SEC, using default 5 seconds", zap.Error(err))
+		}
+	}
+
+	healthCheckDuration := time.Second * time.Duration(healthCheckIntervalSec)
+
+	tgTokenHealthCheck := os.Getenv("TG_HEALTHCHECK_TOKEN")
+	tgChatIDHealthCheck := os.Getenv("TG_HEALTHCHECK_CHAT_ID")
+	tgHealthCheck := tg.NewTgClient(tgTokenHealthCheck, "")
+
+	dbHealthCheck := healthcheck.NewDBHealthCheck(gormDB, healthCheckDuration, logger.Logger, tgHealthCheck, tgChatIDHealthCheck)
+	dbHealthCheck.Start()
+	defer dbHealthCheck.Stop()
+
+	testsHealthCheck := healthcheck.NewTestsHealthCheck(healthCheckDuration, logger.Logger, tgHealthCheck, tgChatIDHealthCheck)
+	testsHealthCheck.Start()
+	defer testsHealthCheck.Stop()
+
+	vpnHealthCheck := healthcheck.NewVpnHealthCheck(healthCheckDuration, logger.Logger, vpnSrv, serverRepo, tgHealthCheck, tgChatIDHealthCheck)
+	vpnHealthCheck.Start()
+	defer vpnHealthCheck.Stop()
 
 	r := gin.Default()
 	r.Use(middleware.Recovery(debug))
