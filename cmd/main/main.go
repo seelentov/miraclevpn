@@ -124,19 +124,19 @@ func main() {
 
 	tgTokenHealthCheck := os.Getenv("TG_HEALTHCHECK_TOKEN")
 	tgChatIDHealthCheck := os.Getenv("TG_HEALTHCHECK_CHAT_ID")
-	tgHealthCheck := tg.NewTgClient(tgTokenHealthCheck, "")
+	tgSenderHealthCheck := tg.NewTgClient(tgTokenHealthCheck, "")
 
-	dbHealthCheck := healthcheck.NewDBHealthCheck(gormDB, healthCheckDuration, logger.Logger, tgHealthCheck, tgChatIDHealthCheck)
+	dbHealthCheck := healthcheck.NewDBHealthCheck(gormDB, healthCheckDuration, logger.Logger, tgSenderHealthCheck, tgChatIDHealthCheck)
 	dbHealthCheck.Start()
 	defer dbHealthCheck.Stop()
 
-	testsHealthCheck := healthcheck.NewTestsHealthCheck(healthCheckDuration, logger.Logger, tgHealthCheck, tgChatIDHealthCheck)
-	testsHealthCheck.Start()
-	defer testsHealthCheck.Stop()
-
-	vpnHealthCheck := healthcheck.NewVpnHealthCheck(healthCheckDuration, logger.Logger, vpnSrv, serverRepo, tgHealthCheck, tgChatIDHealthCheck)
+	vpnHealthCheck := healthcheck.NewVpnHealthCheck(healthCheckDuration, logger.Logger, vpnSrv, serverRepo, tgSenderHealthCheck, tgChatIDHealthCheck)
 	vpnHealthCheck.Start()
 	defer vpnHealthCheck.Stop()
+
+	tgHealthCheck := healthcheck.NewTgHealthCheck(healthCheckDuration, logger.Logger, tgSenderHealthCheck, tgChatIDHealthCheck)
+	tgHealthCheck.Start()
+	defer tgHealthCheck.Stop()
 
 	r := gin.Default()
 	r.Use(middleware.Recovery(debug))

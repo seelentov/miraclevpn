@@ -46,7 +46,7 @@ func (d *VpnHealthCheck) Start() {
 		for {
 			select {
 			case <-ticker.C:
-				if err := d.do(d.vpnClient, d.srvRepo); err != nil {
+				if err := d.do(); err != nil {
 					d.sender.SendMessage(d.adminTo, fmt.Sprintf("VPN health check failed: %v", err))
 					d.logger.Error("VPN health check failed", zap.Error(err))
 				} else {
@@ -64,14 +64,14 @@ func (d *VpnHealthCheck) Stop() {
 	close(d.stopChan)
 }
 
-func (d *VpnHealthCheck) do(vpnClient vpn.VpnService, srvRepo *repo.ServerRepository) error {
-	srvs, err := srvRepo.FindAll()
+func (d *VpnHealthCheck) do() error {
+	srvs, err := d.srvRepo.FindAll()
 	if err != nil {
 		return err
 	}
 
 	for _, srv := range srvs {
-		status, err := vpnClient.GetStatus(srv.Host)
+		status, err := d.vpnClient.GetStatus(srv.Host)
 		if err != nil {
 			return err
 		}
