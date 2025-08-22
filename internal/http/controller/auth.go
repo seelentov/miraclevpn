@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"net/http"
+	"strconv"
 
 	"miraclevpn/internal/services/auth"
 	"miraclevpn/internal/services/crypt"
@@ -91,4 +92,18 @@ func (c *AuthController) PostRegister(ctx *gin.Context) {
 		panic(err)
 	}
 	ctx.JSON(http.StatusOK, gin.H{"token": token, "tg_link": tgLink})
+}
+
+func (c *AuthController) PostRefresh(ctx *gin.Context) {
+	userID, _ := ctx.Get("user_id")
+	userIDInt, err := strconv.ParseInt(userID.(string), 10, 64)
+	if err != nil {
+		panic(err)
+	}
+
+	token, err := c.srv.GenerateToken(userIDInt)
+	if err != nil {
+		panic(err)
+	}
+	ctx.JSON(http.StatusOK, gin.H{"token": token})
 }

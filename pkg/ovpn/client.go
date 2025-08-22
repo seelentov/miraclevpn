@@ -1,3 +1,4 @@
+// Package ovpn provides OpenVPN client utilities for the application.
 package ovpn
 
 import (

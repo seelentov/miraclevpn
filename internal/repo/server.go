@@ -1,3 +1,4 @@
+// Package repo provides data access and storage for the application.
 package repo
 
 import (

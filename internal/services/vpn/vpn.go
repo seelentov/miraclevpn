@@ -1,3 +1,4 @@
+// Package vpn provides VPN management services for the application.
 package vpn
 
 import "time"

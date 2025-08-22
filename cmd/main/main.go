@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 	"math"
+	"miraclevpn/internal/daemon"
 	"miraclevpn/internal/daemon/healthcheck"
-	tg_daemon "miraclevpn/internal/daemon/tg"
 	"miraclevpn/internal/http/middleware"
 	"miraclevpn/internal/models"
 	"os"
@@ -107,7 +107,7 @@ func main() {
 	serverCtrl := controller.NewServerController(serversSrv)
 
 	//Демоны
-	tgDaemon := tg_daemon.NewTgDaemon(tgToken, jwtSrv, userRepo, logger.Logger)
+	tgDaemon := daemon.NewTgDaemon(tgToken, jwtSrv, userRepo, logger.Logger)
 	tgDaemon.Start()
 	defer tgDaemon.Stop()
 
@@ -139,7 +139,7 @@ func main() {
 	defer tgHealthCheck.Stop()
 
 	r := gin.Default()
-	r.Use(middleware.Recovery(debug))
+	r.Use(middleware.Recovery(debug, tgSenderHealthCheck, tgChatIDHealthCheck, logger.Logger))
 	r.NoRoute(middleware.NotFound())
 	r.Use(middleware.SetUserIDMiddleware(jwtSrv))
 
@@ -151,6 +151,12 @@ func main() {
 			{
 				auth.POST("/login", authCtrl.PostLogin)
 				auth.POST("/register", authCtrl.PostRegister)
+
+				refresh := auth.Group("/refresh")
+				refresh.Use(middleware.RequireAuthMiddleware(userRepo))
+				{
+					refresh.POST("/", authCtrl.PostRefresh)
+				}
 			}
 
 			security := v1.Group("/security")

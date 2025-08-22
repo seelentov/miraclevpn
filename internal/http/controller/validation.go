@@ -1,3 +1,4 @@
+// Package controller provides HTTP handlers for the application.
 package controller
 
 import (

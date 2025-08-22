@@ -1,3 +1,4 @@
+// Package logg provides logging utilities for the application.
 package logg
 
 import (
@@ -110,4 +111,3 @@ func (zl *ZapLogger) rotateDaily() {
 func (zl *ZapLogger) Sync() error {
 	return zl.Logger.Sync()
 }
-

@@ -1,3 +1,4 @@
+// Package crypt provides cryptographic utilities for the application.
 package crypt
 
 type CryptService interface {

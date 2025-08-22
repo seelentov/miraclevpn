@@ -1,3 +1,4 @@
+// Package mapper provides utilities for mapping between different data structures.
 package mapper
 
 import (

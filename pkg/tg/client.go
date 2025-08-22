@@ -1,3 +1,4 @@
+// Package tg provides Telegram bot utilities for the application.
 package tg
 
 import (

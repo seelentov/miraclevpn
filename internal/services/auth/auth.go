@@ -1,3 +1,4 @@
+// Package auth provides authentication services for the application.
 package auth
 
 import (
@@ -59,7 +60,7 @@ func (s *AuthService) Authenticate(username, password string) (token string, tgL
 		return "", "", ErrWrongPassword
 	}
 
-	token, err = s.jwtSrv.GenerateToken(strconv.Itoa(int(user.ID)), s.jwtDuration)
+	token, err = s.GenerateToken(user.ID)
 	if err != nil {
 		s.logger.Error("failed to generate token", zap.Int64("user_id", user.ID), zap.Error(err))
 		return "", "", err
@@ -112,7 +113,7 @@ func (s *AuthService) SignUp(username, password string, checkPassword string) (t
 	}
 	s.logger.Debug("verifier code created", zap.Int64("user_id", u.ID), zap.Int32("code", code))
 
-	token, err = s.jwtSrv.GenerateToken(strconv.Itoa(int(u.ID)), s.jwtDuration)
+	token, err = s.GenerateToken(u.ID)
 	if err != nil {
 		s.logger.Error("failed to generate token after registration", zap.Int64("user_id", u.ID), zap.Error(err))
 		return "", "", err
@@ -145,4 +146,13 @@ func (s *AuthService) Activate(userID int64, chatID int64) error {
 
 	s.logger.Debug("user activated", zap.Int64("user_id", userID))
 	return nil
+}
+
+func (s *AuthService) GenerateToken(userID int64) (string, error) {
+	token, err := s.jwtSrv.GenerateToken(strconv.Itoa(int(userID)), s.jwtDuration)
+	if err != nil {
+		s.logger.Error("failed to generate token after registration", zap.Int64("user_id", userID), zap.Error(err))
+		return "", err
+	}
+	return token, nil
 }

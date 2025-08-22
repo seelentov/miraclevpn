@@ -1,3 +1,4 @@
+// Package sender provides messaging services for the application.
 package sender
 
 type Sender interface {

@@ -1,3 +1,4 @@
+// Package healthcheck provides health check services for the application.
 package healthcheck
 
 import (
