@@ -106,7 +106,7 @@ func (s *ServersService) GetConfig(userID int64, serverID int64) (string, error)
 	return config, nil
 }
 
-func (s *ServersService) GetRegions() ([]string, error) {
+func (s *ServersService) GetRegions() ([]*models.Region, error) {
 	s.logger.Debug("getting all regions")
 	regions, err := s.srvRepo.FindAllRegions()
 	if err != nil {
@@ -115,4 +115,19 @@ func (s *ServersService) GetRegions() ([]string, error) {
 	}
 	s.logger.Debug("all regions fetched", zap.Int("count", len(regions)))
 	return regions, nil
+}
+
+func (s *ServersService) GetServerStatus(serverID int64) (server *models.Server, currentUsersCount int, err error) {
+	srv, err := s.srvRepo.FindByID(serverID)
+	if err != nil {
+		s.logger.Error("failed to find server by id", zap.Int64("server_id", serverID), zap.Error(err))
+		return nil, 0, err
+	}
+
+	stat, err := s.vpnService.GetStatus(srv.Host)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return srv, len(stat.Clients), nil
 }

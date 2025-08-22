@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	"miraclevpn/internal/models"
 	"miraclevpn/internal/services/user"
 	"net/http"
 	"strconv"
@@ -20,6 +21,8 @@ func NewUserController(srv *user.UserService) *UserController {
 	}
 }
 
+type GetUserRes *models.User
+
 func (c *UserController) GetUser(ctx *gin.Context) {
 	userID, _ := ctx.Get("user_id")
 	userIDInt, err := strconv.ParseInt(userID.(string), 10, 64)
@@ -36,15 +39,17 @@ func (c *UserController) GetUser(ctx *gin.Context) {
 		}
 		return
 	}
-	ctx.JSON(http.StatusOK, u)
+	ctx.JSON(http.StatusOK, GetUserRes(u))
 }
 
-type ChangePasswordSendReq struct {
+type PostChangePasswordSendReq struct {
 	Username string `json:"username" binding:"required"`
 }
 
+type PostChangePasswordSendRes *MessageRes
+
 func (c *UserController) PostChangePasswordSend(ctx *gin.Context) {
-	var req ChangePasswordSendReq
+	var req PostChangePasswordSendReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		var ve validator.ValidationErrors
 		if errors.As(err, &ve) {
@@ -59,18 +64,20 @@ func (c *UserController) PostChangePasswordSend(ctx *gin.Context) {
 		panic(err)
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"messsage": "Код для смены пароля отправлен"})
+	ctx.JSON(http.StatusOK, PostChangePasswordSendRes(NewMessageRes("Код для смены пароля отправлен")))
 }
 
-type ChangePasswordVerifyReq struct {
+type PostChangePasswordVerifyReq struct {
 	Username          string `json:"username" binding:"required"`
 	Code              int32  `json:"code" binding:"required"`
 	NewPassword       string `json:"new_password" binding:"required,min=8,max=64"`
 	NewPasswordVerify string `json:"new_password_verify" binding:"required"`
 }
 
+type PostChangePasswordVerifyRes *MessageRes
+
 func (c *UserController) PostChangePasswordVerify(ctx *gin.Context) {
-	var req ChangePasswordVerifyReq
+	var req PostChangePasswordVerifyReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		var ve validator.ValidationErrors
 		if errors.As(err, &ve) {
@@ -94,5 +101,5 @@ func (c *UserController) PostChangePasswordVerify(ctx *gin.Context) {
 		panic(err)
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"message": "Пароль успешно изменен"})
+	ctx.JSON(http.StatusOK, PostChangePasswordVerifyRes(NewMessageRes("Пароль успешно изменен")))
 }

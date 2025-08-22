@@ -8,5 +8,11 @@ type Server struct {
 	Region  string
 	Service string
 
+	RegionName    string
+	RegionFlagURL string
+
+	MaxUsers string
+	MinUsers string
+
 	Active bool
 }

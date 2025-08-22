@@ -2,6 +2,7 @@ package controller
 
 import (
 	"errors"
+	"miraclevpn/internal/models"
 	"miraclevpn/internal/services/servers"
 	"net/http"
 	"strconv"
@@ -19,13 +20,17 @@ func NewServerController(srv *servers.ServersService) *ServerController {
 	}
 }
 
+type GetServers []*models.Server
+
 func (c *ServerController) GetServers(ctx *gin.Context) {
 	servers, err := c.srv.GetAllServers()
 	if err != nil {
 		panic(err)
 	}
-	ctx.JSON(http.StatusOK, servers)
+	ctx.JSON(http.StatusOK, GetServers(servers))
 }
+
+type GetServersByRegionRes []*models.Server
 
 func (c *ServerController) GetServersByRegion(ctx *gin.Context) {
 	region := ctx.Param("region")
@@ -37,7 +42,12 @@ func (c *ServerController) GetServersByRegion(ctx *gin.Context) {
 	if err != nil {
 		panic(err)
 	}
-	ctx.JSON(http.StatusOK, servers)
+	ctx.JSON(http.StatusOK, GetServersByRegionRes(servers))
+}
+
+type GetServerRes struct {
+	Server *models.Server `json:"server"`
+	Config string         `json:"config"`
 }
 
 func (c *ServerController) GetServer(ctx *gin.Context) {
@@ -69,13 +79,43 @@ func (c *ServerController) GetServer(ctx *gin.Context) {
 		panic(err)
 	}
 
-	ctx.JSON(http.StatusOK, gin.H{"server": server, "config": config})
+	ctx.JSON(http.StatusOK, GetServerRes{
+		Server: server,
+		Config: config,
+	})
 }
+
+type GetRegionsRes []*models.Region
 
 func (c *ServerController) GetRegions(ctx *gin.Context) {
 	regions, err := c.srv.GetRegions()
 	if err != nil {
 		panic(err)
 	}
-	ctx.JSON(http.StatusOK, regions)
+	ctx.JSON(http.StatusOK, GetRegionsRes(regions))
+}
+
+type GetServerStatusRes struct {
+	Server            *models.Server `json:"server"`
+	CurrentUsersCount int            `json:"current_users_count"`
+}
+
+func (c *ServerController) GetServerStatus(ctx *gin.Context) {
+	id := ctx.Param("id")
+	if id == "" {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "ID не указан"})
+		return
+	}
+	idInt, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		panic(err)
+	}
+	server, currentUsersCount, err := c.srv.GetServerStatus(idInt)
+	if err != nil {
+		panic(err)
+	}
+	ctx.JSON(http.StatusOK, GetServerStatusRes{
+		Server:            server,
+		CurrentUsersCount: currentUsersCount,
+	})
 }

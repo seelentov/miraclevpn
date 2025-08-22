@@ -10,3 +10,5 @@ logs/*
 cmd/**/__debug_*
 cmd/test/*
 cmd/test
+
+storage/*

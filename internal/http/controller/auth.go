@@ -29,12 +29,18 @@ type PostLoginReq struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type PostLoginRes struct {
+	Token  string  `json:"token"`
+	Active bool    `json:"active"`
+	TgLink *string `json:"tg_link,omitempty"`
+}
+
 func (c *AuthController) PostLogin(ctx *gin.Context) {
 	var req PostLoginReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		var ve validator.ValidationErrors
 		if errors.As(err, &ve) {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": HandleValidation(ve, req)})
+			ctx.JSON(http.StatusBadRequest, gin.H{"errors": HandleValidation(ve, req)})
 			return
 		}
 
@@ -52,11 +58,14 @@ func (c *AuthController) PostLogin(ctx *gin.Context) {
 		return
 	}
 
-	res := gin.H{"token": token, "active": true}
+	res := &PostLoginRes{
+		Token:  token,
+		Active: true,
+	}
 
 	if tgLink != "" {
-		res["tg_link"] = tgLink
-		res["active"] = false
+		res.TgLink = &tgLink
+		res.Active = false
 	}
 
 	ctx.JSON(http.StatusOK, res)
@@ -66,6 +75,11 @@ type PostRegisterReq struct {
 	Username      string `json:"username" binding:"required"`
 	Password      string `json:"password" binding:"required,min=8,max=64"`
 	CheckPassword string `json:"check_password" binding:"required"`
+}
+
+type PostRegisterRes struct {
+	Token  string  `json:"token"`
+	TgLink *string `json:"tg_link,omitempty"`
 }
 
 func (c *AuthController) PostRegister(ctx *gin.Context) {
@@ -91,7 +105,15 @@ func (c *AuthController) PostRegister(ctx *gin.Context) {
 
 		panic(err)
 	}
-	ctx.JSON(http.StatusOK, gin.H{"token": token, "tg_link": tgLink})
+
+	ctx.JSON(http.StatusOK, &PostRegisterRes{
+		Token:  token,
+		TgLink: &tgLink,
+	})
+}
+
+type PostRefreshRes struct {
+	Token string `json:"token"`
 }
 
 func (c *AuthController) PostRefresh(ctx *gin.Context) {
@@ -105,5 +127,7 @@ func (c *AuthController) PostRefresh(ctx *gin.Context) {
 	if err != nil {
 		panic(err)
 	}
-	ctx.JSON(http.StatusOK, gin.H{"token": token})
+	ctx.JSON(http.StatusOK, &PostRefreshRes{
+		Token: token,
+	})
 }

@@ -142,6 +142,7 @@ func main() {
 	r.Use(middleware.Recovery(debug, tgSenderHealthCheck, tgChatIDHealthCheck, logger.Logger))
 	r.NoRoute(middleware.NotFound())
 	r.Use(middleware.SetUserIDMiddleware(jwtSrv))
+	r.Static("/storage", "./storage")
 
 	api := r.Group("/api")
 	{
@@ -178,6 +179,7 @@ func main() {
 					serverGroup.GET("/region", serverCtrl.GetRegions)
 					serverGroup.GET("/region/:region", serverCtrl.GetServersByRegion)
 					serverGroup.GET("/:id", serverCtrl.GetServer)
+					serverGroup.GET("/status/:id", serverCtrl.GetServerStatus)
 				}
 			}
 		}

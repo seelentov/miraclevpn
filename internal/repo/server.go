@@ -43,10 +43,26 @@ func (r *ServerRepository) FindByID(id int64) (*models.Server, error) {
 	return &s, nil
 }
 
-func (r *ServerRepository) FindAllRegions() ([]string, error) {
-	var regions []string
-	if err := r.db.Model(&models.Server{}).Distinct().Pluck("region", &regions).Error; err != nil {
+/*
+type Region struct {
+	Code string
+    Name    string
+    FlagURL string
+}
+*/
+
+func (r *ServerRepository) FindAllRegions() ([]*models.Region, error) {
+	var regions []*models.Region
+
+	err := r.db.Model(&models.Server{}).
+		Select("DISTINCT region, region_name, region_flag_url").
+		Where("region IS NOT NULL AND region != ''").
+		Order("region").
+		Scan(&regions).Error
+
+	if err != nil {
 		return nil, err
 	}
+
 	return regions, nil
 }
