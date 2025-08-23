@@ -12,4 +12,6 @@ type User struct {
 
 	ExpiredAt time.Time
 	Active    bool
+
+	Trial bool
 }

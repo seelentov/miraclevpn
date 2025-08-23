@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"fmt"
 	"miraclevpn/internal/services/sender"
+	"miraclevpn/internal/utils"
 	"time"
 
 	"go.uber.org/zap"
@@ -51,8 +52,9 @@ func (d *DBHealthCheck) Start() {
 			select {
 			case <-ticker.C:
 				if err := d.do(sqlDB); err != nil {
-					d.sender.SendMessage(d.adminTo, fmt.Sprintf("Database health check failed: %v", err))
-					d.logger.Error("Database health check failed", zap.Error(err))
+					er := utils.GetStackTrace(err)
+					d.sender.SendMessage(d.adminTo, fmt.Sprintf("Database health check failed: %v", er))
+					d.logger.Error("Database health check failed", zap.String("error", er))
 				} else {
 					d.logger.Debug("Database health check passed")
 				}

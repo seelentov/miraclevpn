@@ -47,6 +47,7 @@ func (r *UserRepository) Create(username string, password string) (*models.User,
 		Username: username,
 		Password: hashedPassword,
 		Active:   false,
+		Trial:    true,
 	}
 
 	if err := r.db.Save(&u).Error; err != nil {

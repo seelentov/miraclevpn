@@ -12,3 +12,6 @@ cmd/test/*
 cmd/test
 
 storage/*
+
+api
+main

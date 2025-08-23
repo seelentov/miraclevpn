@@ -5,6 +5,7 @@ import (
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/sender"
 	"miraclevpn/internal/services/vpn"
+	"miraclevpn/internal/utils"
 	"time"
 
 	"go.uber.org/zap"
@@ -47,8 +48,9 @@ func (d *VpnHealthCheck) Start() {
 			select {
 			case <-ticker.C:
 				if err := d.do(); err != nil {
-					d.sender.SendMessage(d.adminTo, fmt.Sprintf("VPN health check failed: %v", err))
-					d.logger.Error("VPN health check failed", zap.Error(err))
+					er := utils.GetStackTrace(err)
+					d.sender.SendMessage(d.adminTo, fmt.Sprintf("VPN health check failed: %v", er))
+					d.logger.Error("VPN health check failed", zap.String("error", er))
 				} else {
 					d.logger.Debug("VPN health check passed")
 				}

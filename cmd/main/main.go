@@ -7,6 +7,7 @@ import (
 	"miraclevpn/internal/daemon/healthcheck"
 	"miraclevpn/internal/http/middleware"
 	"miraclevpn/internal/models"
+	"net/http"
 	"os"
 	"strconv"
 	"time"
@@ -139,10 +140,21 @@ func main() {
 	defer tgHealthCheck.Stop()
 
 	r := gin.Default()
+
+	if debug {
+		r.SetTrustedProxies(nil)
+	} else {
+		r.SetTrustedProxies([]string{"127.0.0.1", "::1"})
+	}
+
 	r.Use(middleware.Recovery(debug, tgSenderHealthCheck, tgChatIDHealthCheck, logger.Logger))
 	r.NoRoute(middleware.NotFound())
 	r.Use(middleware.SetUserIDMiddleware(jwtSrv))
 	r.Static("/storage", "./storage")
+
+	r.GET("/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "pong"})
+	})
 
 	api := r.Group("/api")
 	{

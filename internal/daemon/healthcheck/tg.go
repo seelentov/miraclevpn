@@ -3,6 +3,7 @@ package healthcheck
 import (
 	"fmt"
 	"miraclevpn/internal/services/sender"
+	"miraclevpn/internal/utils"
 	"time"
 
 	"go.uber.org/zap"
@@ -40,8 +41,9 @@ func (d *TgHealthCheck) Start() {
 			select {
 			case <-ticker.C:
 				if err := d.do(); err != nil {
-					d.sender.SendMessage(d.adminTo, fmt.Sprintf("TG health check failed: %v", err))
-					d.logger.Error("TG health check failed", zap.Error(err))
+					er := utils.GetStackTrace(err)
+					d.sender.SendMessage(d.adminTo, fmt.Sprintf("TG health check failed: %v", er))
+					d.logger.Error("TG health check failed", zap.String("error", er))
 				} else {
 					d.logger.Debug("TG health check passed")
 				}
