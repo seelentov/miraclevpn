@@ -9,45 +9,30 @@ import (
 )
 
 type UserRepository struct {
-	db    *gorm.DB
-	crypt cryptt.CryptService
+	db        *gorm.DB
+	crypt     cryptt.CryptService
+	freeTrial time.Duration
 }
 
-func NewUserRepository(db *gorm.DB, crypt cryptt.CryptService) *UserRepository {
-	return &UserRepository{db, crypt}
+func NewUserRepository(db *gorm.DB, crypt cryptt.CryptService, freeTrial time.Duration) *UserRepository {
+	return &UserRepository{db, crypt, freeTrial}
 }
 
 func (r *UserRepository) FindByID(userID int64) (*models.User, error) {
 	var u models.User
 
-	if err := r.db.Find(&u, userID).Error; err != nil {
+	if err := r.db.First(&u, userID).Error; err != nil {
 		return nil, err
 	}
 
 	return &u, nil
 }
 
-func (r *UserRepository) FindByUsername(username string) (*models.User, error) {
-	var u models.User
-
-	if err := r.db.Where("username = ?", username).First(&u).Error; err != nil {
-		return nil, err
-	}
-
-	return &u, nil
-}
-
-func (r *UserRepository) Create(username string, password string) (*models.User, error) {
-	hashedPassword, err := r.crypt.GenerateHash(password)
-	if err != nil {
-		return nil, err
-	}
-
+func (r *UserRepository) Create(uID int64) (*models.User, error) {
 	u := models.User{
-		Username: username,
-		Password: hashedPassword,
-		Active:   false,
-		Trial:    true,
+		ID:        uID,
+		Trial:     true,
+		ExpiredAt: time.Now().Add(r.freeTrial),
 	}
 
 	if err := r.db.Save(&u).Error; err != nil {
@@ -55,56 +40,6 @@ func (r *UserRepository) Create(username string, password string) (*models.User,
 	}
 
 	return &u, nil
-}
-
-func (r *UserRepository) SetPassword(userID int64, newPassword string) error {
-	var u models.User
-	if err := r.db.Find(&u, userID).Error; err != nil {
-		return err
-	}
-
-	hashedPassword, err := r.crypt.GenerateHash(newPassword)
-	if err != nil {
-		return err
-	}
-
-	u.Password = hashedPassword
-
-	if err := r.db.Save(&u).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *UserRepository) SetTGChatID(userID, chatID int64) error {
-	var u models.User
-	if err := r.db.Find(&u, userID).Error; err != nil {
-		return err
-	}
-
-	u.TGChat = &chatID
-
-	if err := r.db.Save(&u).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (r *UserRepository) Activate(userID int64) error {
-	var u models.User
-	if err := r.db.Find(&u, userID).Error; err != nil {
-		return err
-	}
-
-	u.Active = true
-
-	if err := r.db.Save(&u).Error; err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func (r *UserRepository) AddSubDays(userID int64, days int) error {
@@ -114,23 +49,11 @@ func (r *UserRepository) AddSubDays(userID int64, days int) error {
 	}
 
 	u.ExpiredAt = u.ExpiredAt.Add(time.Duration(days) * time.Hour * 24)
+	u.Trial = false
 
 	if err := r.db.Save(&u).Error; err != nil {
 		return err
 	}
 
 	return nil
-}
-
-func (r *UserRepository) CheckPassword(userID int64, password string) bool {
-	u, err := r.FindByID(userID)
-	if err != nil {
-		return false
-	}
-
-	ok, err := r.crypt.ComparePasswordAndHash(password, u.Password)
-	if err != nil {
-		return false
-	}
-	return ok
 }

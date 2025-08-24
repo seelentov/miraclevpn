@@ -6,6 +6,7 @@ import (
 	"miraclevpn/internal/models"
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/vpn"
+	"time"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -90,14 +91,14 @@ func (s *ServersService) GetConfig(userID int64, serverID int64) (string, error)
 		return "", err
 	}
 
-	s.logger.Debug("creating VPN user", zap.String("host", srv.Host), zap.String("username", usr.Username))
-	config, err := s.vpnService.CreateUser(srv.Host, usr.Username)
+	s.logger.Debug("creating VPN user", zap.String("host", srv.Host), zap.Int64("UID", usr.ID))
+	config, username, err := s.vpnService.CreateUser(srv.Host)
 	if err != nil {
-		s.logger.Error("failed to create VPN user", zap.String("host", srv.Host), zap.String("username", usr.Username), zap.Error(err))
+		s.logger.Error("failed to create VPN user", zap.String("host", srv.Host), zap.Int64("UID", usr.ID), zap.Error(err))
 		return "", err
 	}
 
-	if err := s.ursSrvRepo.CreateOrUpdate(userID, serverID, config); err != nil {
+	if err := s.ursSrvRepo.CreateOrUpdate(userID, serverID, config, username); err != nil {
 		s.logger.Error("failed to save user-server config", zap.Int64("user_id", userID), zap.Int64("server_id", serverID), zap.Error(err))
 		return "", err
 	}
@@ -130,4 +131,84 @@ func (s *ServersService) GetServerStatus(serverID int64) (server *models.Server,
 	}
 
 	return srv, len(stat.Clients), nil
+}
+
+func (s *ServersService) UpdateExpired(expiration time.Duration) error {
+	s.logger.Info("starting update of expired servers", zap.Duration("expiration", expiration))
+
+	uss, err := s.ursSrvRepo.FindExpired(expiration)
+	if err != nil {
+		s.logger.Error("failed to find expired servers", zap.Duration("expiration", expiration), zap.Error(err))
+		return err
+	}
+
+	s.logger.Info("found expired server-user associations", zap.Int("count", len(uss)))
+
+	for i, us := range uss {
+		s.logger.Debug("processing association",
+			zap.Int("index", i),
+			zap.Int64("serverID", us.ServerID),
+			zap.Int64("userID", us.UserID))
+
+		srv, err := s.srvRepo.FindByID(us.ServerID)
+		if err != nil {
+			s.logger.Error("failed to find server by ID",
+				zap.Int64("serverID", us.ServerID),
+				zap.Error(err))
+			return err
+		}
+
+		usr, err := s.ursRepo.FindByID(us.UserID)
+		if err != nil {
+			s.logger.Error("failed to find user by ID",
+				zap.Int64("userID", us.UserID),
+				zap.Error(err))
+			return err
+		}
+
+		s.logger.Info("deleting expired VPN user",
+			zap.String("host", srv.Host),
+			zap.Int64("userID", usr.ID))
+
+		if err := s.vpnService.DeleteUser(srv.Host, us.ConfigFile); err != nil {
+			s.logger.Error("failed to delete VPN user",
+				zap.String("host", srv.Host),
+				zap.Int64("userID", usr.ID),
+				zap.Error(err))
+			return err
+		}
+
+		s.logger.Info("creating new VPN user",
+			zap.String("host", srv.Host),
+			zap.Int64("userID", usr.ID))
+
+		config, fileName, err := s.vpnService.CreateUser(srv.Host)
+		if err != nil {
+			s.logger.Error("failed to create VPN user",
+				zap.String("host", srv.Host),
+				zap.Int64("userID", usr.ID),
+				zap.Error(err))
+			return err
+		}
+
+		s.logger.Info("updating user-server association",
+			zap.Int64("userID", usr.ID),
+			zap.Int64("serverID", srv.ID))
+
+		if err := s.ursSrvRepo.CreateOrUpdate(usr.ID, srv.ID, config, fileName); err != nil {
+			s.logger.Error("failed to update user-server association",
+				zap.Int64("userID", usr.ID),
+				zap.Int64("serverID", srv.ID),
+				zap.Error(err))
+			return err
+		}
+
+		s.logger.Info("successfully updated expired association",
+			zap.Int64("userID", usr.ID),
+			zap.Int64("serverID", srv.ID))
+	}
+
+	s.logger.Info("completed update of expired servers",
+		zap.Int("processed_count", len(uss)))
+	return nil
 }

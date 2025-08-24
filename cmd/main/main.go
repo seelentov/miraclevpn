@@ -3,10 +3,9 @@ package main
 import (
 	"log"
 	"math"
-	"miraclevpn/internal/daemon"
 	"miraclevpn/internal/daemon/healthcheck"
+	"miraclevpn/internal/daemon/vpn_daemon"
 	"miraclevpn/internal/http/middleware"
-	"miraclevpn/internal/models"
 	"net/http"
 	"os"
 	"strconv"
@@ -18,7 +17,6 @@ import (
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/auth"
 	"miraclevpn/internal/services/crypt"
-	"miraclevpn/internal/services/sender"
 	"miraclevpn/internal/services/servers"
 	"miraclevpn/internal/services/user"
 	"miraclevpn/pkg/ovpn"
@@ -52,14 +50,30 @@ func main() {
 	sshStatusPath := os.Getenv("SSH_STATUS_PATH")
 	sshCreateUserFile := os.Getenv("SSH_CREATE_USER_FILE")
 	sshRevokeUserFile := os.Getenv("SSH_REVOKE_USER_FILE")
+	sshConfigsDir := os.Getenv("SSH_CONFIGS_DIR")
+
+	vpnRefreshConfigIntervalStr := os.Getenv("VPN_REFRESH_INTERVAL_SEC")
+	vpnConfigExpirationStt := os.Getenv("VPN_CONFIG_DIRATION_SEC")
+
+	vpnRefreshConfigInterval, err := strconv.Atoi(vpnRefreshConfigIntervalStr)
+	if err != nil {
+		log.Fatal("failed get VPN_REFRESH_INTERVAL_SEC: " + err.Error())
+	}
+
+	vpnConfigExpiration, err := strconv.Atoi(vpnConfigExpirationStt)
+	if err != nil {
+		log.Fatal("failed get VPN_CONFIG_DIRATION_SEC: " + err.Error())
+	}
+
+	freeTrial, err := strconv.Atoi(os.Getenv("FREE_TRIAL_SEC"))
+	if err != nil {
+		log.Fatal("failed get FREE_TRIAL_SEC: " + err.Error())
+	}
 
 	jwtDuration := math.MaxInt32
 	if os.Getenv("JWT_DURATION_MIN") != "" && os.Getenv("JWT_DURATION_MIN") != "0" {
 		jwtDuration, _ = strconv.Atoi(os.Getenv("JWT_DURATION_MIN"))
 	}
-
-	tgToken := os.Getenv("TG_TOKEN")
-	tgName := os.Getenv("TG_NAME")
 
 	// Инициализация логгера
 	logger, err := logg.NewZapLogger(logDir, logRetain, debug)
@@ -85,59 +99,54 @@ func main() {
 	jwtSrv := crypt.NewJwtService(jwtSecret, logger.Logger)
 
 	// Репозитории
-	userRepo := repo.NewUserRepository(gormDB, argonSrv)
-	veriRepo := repo.NewVerifierRepository(gormDB)
+	userRepo := repo.NewUserRepository(gormDB, argonSrv, time.Duration(freeTrial)*time.Second)
 	serverRepo := repo.NewServerRepository(gormDB)
 	userServerRepo := repo.NewUserServerRepository(gormDB)
 
-	// Telegram sender
-	tgSender := tg.NewTgClient(tgToken, tgName)
-	tgSrv := sender.NewTgService(userRepo, tgSender, logger.Logger)
-
 	// VPN
-	vpnSrv := ovpn.NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile)
+	vpnSrv := ovpn.NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile, sshConfigsDir)
 
 	// Сервисы
-	authSrv := auth.NewAuthService(userRepo, veriRepo, tgSrv, jwtSrv, time.Duration(jwtDuration)*time.Minute, logger.Logger)
-	userSrv := user.NewUserService(userRepo, veriRepo, tgSrv, logger.Logger)
+	authSrv := auth.NewAuthService(userRepo, jwtSrv, time.Duration(jwtDuration)*time.Minute, logger.Logger)
+	userSrv := user.NewUserService(userRepo, logger.Logger)
 	serversSrv := servers.NewServersService(userServerRepo, serverRepo, userRepo, vpnSrv, logger.Logger)
 
 	// Контроллеры
 	authCtrl := controller.NewAuthController(authSrv, jwtSrv)
 	userCtrl := controller.NewUserController(userSrv)
-	serverCtrl := controller.NewServerController(serversSrv)
+	serverCtrl := controller.NewServerController(serversSrv, time.Second*time.Duration(vpnConfigExpiration))
 
-	//Демоны
-	tgDaemon := daemon.NewTgDaemon(tgToken, jwtSrv, userRepo, logger.Logger)
-	tgDaemon.Start()
-	defer tgDaemon.Stop()
-
-	healthCheckIntervalSec := 60
-	h := os.Getenv("HEALTHCHECK_INTERVAL_SEC")
-	if h != "" {
-		healthCheckIntervalSec, err = strconv.Atoi(h)
-		if err != nil || healthCheckIntervalSec <= 0 {
-			logger.Logger.Error("invalid HEALTHCHECK_INTERVAL_SEC, using default 5 seconds", zap.Error(err))
-		}
-	}
-
-	healthCheckDuration := time.Second * time.Duration(healthCheckIntervalSec)
-
+	//Админ TG
 	tgTokenHealthCheck := os.Getenv("TG_HEALTHCHECK_TOKEN")
 	tgChatIDHealthCheck := os.Getenv("TG_HEALTHCHECK_CHAT_ID")
 	tgSenderHealthCheck := tg.NewTgClient(tgTokenHealthCheck, "")
 
-	dbHealthCheck := healthcheck.NewDBHealthCheck(gormDB, healthCheckDuration, logger.Logger, tgSenderHealthCheck, tgChatIDHealthCheck)
-	dbHealthCheck.Start()
-	defer dbHealthCheck.Stop()
+	//Демоны
+	vpnRefreshDaemon := vpn_daemon.NewVpnRefreshDaemon(time.Second*time.Duration(vpnRefreshConfigInterval), logger.Logger, vpnSrv, serversSrv, tgSenderHealthCheck, tgChatIDHealthCheck, time.Second*time.Duration(vpnConfigExpiration))
+	vpnRefreshDaemon.Start()
+	defer vpnRefreshDaemon.Stop()
 
-	vpnHealthCheck := healthcheck.NewVpnHealthCheck(healthCheckDuration, logger.Logger, vpnSrv, serverRepo, tgSenderHealthCheck, tgChatIDHealthCheck)
-	vpnHealthCheck.Start()
-	defer vpnHealthCheck.Stop()
+	//Самомониторинг
+	if !debug {
+		healthCheckIntervalSec := 60
+		h := os.Getenv("HEALTHCHECK_INTERVAL_SEC")
+		if h != "" {
+			healthCheckIntervalSec, err = strconv.Atoi(h)
+			if err != nil || healthCheckIntervalSec <= 0 {
+				logger.Logger.Error("invalid HEALTHCHECK_INTERVAL_SEC, using default 5 seconds", zap.Error(err))
+			}
+		}
 
-	tgHealthCheck := healthcheck.NewTgHealthCheck(healthCheckDuration, logger.Logger, tgSenderHealthCheck, tgChatIDHealthCheck)
-	tgHealthCheck.Start()
-	defer tgHealthCheck.Stop()
+		healthCheckDuration := time.Second * time.Duration(healthCheckIntervalSec)
+
+		dbHealthCheck := healthcheck.NewDBHealthCheck(gormDB, healthCheckDuration, logger.Logger, tgSenderHealthCheck, tgChatIDHealthCheck)
+		dbHealthCheck.Start()
+		defer dbHealthCheck.Stop()
+
+		vpnHealthCheck := healthcheck.NewVpnHealthCheck(healthCheckDuration, logger.Logger, vpnSrv, serverRepo, tgSenderHealthCheck, tgChatIDHealthCheck)
+		vpnHealthCheck.Start()
+		defer vpnHealthCheck.Stop()
+	}
 
 	r := gin.Default()
 
@@ -163,19 +172,11 @@ func main() {
 			auth := v1.Group("/auth")
 			{
 				auth.POST("/login", authCtrl.PostLogin)
-				auth.POST("/register", authCtrl.PostRegister)
-
 				refresh := auth.Group("/refresh")
 				refresh.Use(middleware.RequireAuthMiddleware(userRepo))
 				{
 					refresh.POST("/", authCtrl.PostRefresh)
 				}
-			}
-
-			security := v1.Group("/security")
-			{
-				security.POST("/try-change-password", userCtrl.PostChangePasswordSend)
-				security.POST("/change-password", userCtrl.PostChangePasswordVerify)
 			}
 
 			o := v1.Group("/")
@@ -195,29 +196,6 @@ func main() {
 				}
 			}
 		}
-	}
-
-	//DEBUG
-	if debug {
-		p, err := argonSrv.GenerateHash("12345678")
-		if err != nil {
-			logger.Logger.Fatal("cant create debug user", zap.Error(err))
-		}
-
-		gormDB.Save(&models.User{
-			ID:        1,
-			Username:  "testuser",
-			Password:  p,
-			TGChat:    nil,
-			Active:    false,
-			ExpiredAt: time.Now().Add(time.Hour * 24 * 365),
-		})
-
-		token, err := jwtSrv.GenerateToken("1", time.Duration(jwtDuration)*time.Minute)
-		if err != nil {
-			logger.Logger.Fatal("cant generate debug token", zap.Error(err))
-		}
-		logger.Logger.Info("debug token", zap.String("token", token))
 	}
 
 	r.Run(":" + os.Getenv("PORT"))

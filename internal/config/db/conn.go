@@ -11,7 +11,6 @@ var migrate = []any{
 	&models.User{},
 	&models.Server{},
 	&models.UserServer{},
-	&models.Verifier{},
 }
 
 func NewConn(dialector gorm.Dialector) (*gorm.DB, error) {

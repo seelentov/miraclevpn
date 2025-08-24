@@ -3,7 +3,9 @@ package ovpn
 
 import (
 	"bufio"
+	"crypto/rand"
 	"fmt"
+	"math/big"
 	"miraclevpn/internal/services/vpn"
 	"os/exec"
 	"strconv"
@@ -17,14 +19,16 @@ type Client struct {
 	statusPath     string
 	createUserFile string
 	revokeUserFile string
+	userFilesDir   string
 }
 
-func NewClient(username, statusPath, createUserFile, revokeUserFile string) *Client {
+func NewClient(username, statusPath, createUserFile, revokeUserFile string, userFilesDir string) *Client {
 	return &Client{
 		username:       username,
 		statusPath:     statusPath,
 		createUserFile: createUserFile,
 		revokeUserFile: revokeUserFile,
+		userFilesDir:   userFilesDir,
 	}
 }
 
@@ -57,43 +61,35 @@ func (c *Client) GetStatus(host string) (*vpn.Status, error) {
 	return status, nil
 }
 
-func (c *Client) CreateUser(host string, username string) (string, error) {
-	username = strings.ReplaceAll(username, "+", "_")
+func (c *Client) CreateUser(host string) (config string, filename string, err error) {
+	username, err := c.generateUsername(host)
+	if err != nil {
+		return "", "", err
+	}
 
 	cmd := exec.Command(
 		"ssh",
 		"-o", "StrictHostKeyChecking=no",
 		fmt.Sprintf("%s@%s", c.username, host),
-		"cat", fmt.Sprintf("/etc/openvpn/server/easy-rsa/%s.ovpn", username),
+		"sudo", c.createUserFile, username,
 	)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		cmd := exec.Command(
-			"ssh",
-			"-o", "StrictHostKeyChecking=no",
-			fmt.Sprintf("%s@%s", c.username, host),
-			"sudo", c.createUserFile, username,
-		)
-		output, err := cmd.CombinedOutput()
-		if err != nil {
-			return "", fmt.Errorf("create user failed: %v, output: %s", err, string(output))
-		}
-
-		cmd = exec.Command(
-			"ssh",
-			"-o", "StrictHostKeyChecking=no",
-			fmt.Sprintf("%s@%s", c.username, host),
-			"cat", fmt.Sprintf("/etc/openvpn/server/easy-rsa/%s.ovpn", username),
-		)
-		output, err = cmd.CombinedOutput()
-		if err != nil {
-			return "", fmt.Errorf("failed to get ovpn file after creation: %v, output: %s", err, string(output))
-		}
-
-		return string(output), nil
+		return "", "", fmt.Errorf("create user failed: %v, output: %s", err, string(output))
 	}
 
-	return string(output), nil
+	cmd = exec.Command(
+		"ssh",
+		"-o", "StrictHostKeyChecking=no",
+		fmt.Sprintf("%s@%s", c.username, host),
+		"cat", fmt.Sprintf("%s/%s.ovpn", c.userFilesDir, username),
+	)
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		return "", "", fmt.Errorf("failed to get ovpn file after creation: %v, output: %s", err, string(output))
+	}
+
+	return string(output), username, nil
 }
 
 func (c *Client) DeleteUser(host string, username string) error {
@@ -107,6 +103,18 @@ func (c *Client) DeleteUser(host string, username string) error {
 	if err != nil {
 		return fmt.Errorf("delete user failed: %v, output: %s", err, string(output))
 	}
+
+	cmd = exec.Command(
+		"ssh",
+		"-o", "StrictHostKeyChecking=no",
+		fmt.Sprintf("%s@%s", c.username, host),
+		"sudo", "rm", c.userFilesDir+username+".ovpn",
+	)
+	output, err = cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("delete user failed: %v, output: %s", err, string(output))
+	}
+
 	return nil
 }
 
@@ -118,6 +126,72 @@ func (c *Client) checkServerOnline(host string) error {
 	}
 
 	return nil
+}
+
+func (c *Client) generateUsername(host string) (string, error) {
+	cmd := exec.Command(
+		"ssh",
+		"-o", "StrictHostKeyChecking=no",
+		fmt.Sprintf("%s@%s", c.username, host),
+		"find "+c.userFilesDir+" -maxdepth 1 -type f -name \"*.ovpn\" -printf \"%f\\n\"",
+	)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("server %s is unreachable: %v\nOutput: %s", host, err, string(output))
+	}
+
+	existingFiles := strings.Split(strings.TrimSpace(string(output)), ".ovpn\n")
+	existingFilesMap := make(map[string]bool)
+	for _, file := range existingFiles {
+		if file != "" {
+			nameWithoutExt := strings.TrimSuffix(file, ".ovpn")
+			existingFilesMap[nameWithoutExt] = true
+		}
+	}
+
+	maxAttempts := 100
+	for attempt := 0; attempt < maxAttempts; attempt++ {
+		name, err := generateRandomDigits(20)
+		if err != nil {
+			return "", fmt.Errorf("failed to generate random name: %v", err)
+		}
+
+		if !existingFilesMap[name] {
+			return name, nil
+		}
+	}
+
+	return "", fmt.Errorf("failed to generate unique username after %d attempts", maxAttempts)
+}
+
+func generateRandomDigits(length int) (string, error) {
+	result := make([]byte, length)
+
+	for i := 0; i < length; i++ {
+		num, err := rand.Int(rand.Reader, big.NewInt(10))
+		if err != nil {
+			return "", err
+		}
+		result[i] = byte(num.Int64()) + '0'
+	}
+
+	return string(result), nil
+}
+
+func generateRandomDigitsSimple(length int) (string, error) {
+	const digits = "0123456789"
+	result := make([]byte, length)
+
+	for i := 0; i < length; i++ {
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(digits))))
+		if err != nil {
+			return "", err
+		}
+		result[i] = digits[num.Int64()]
+	}
+
+	return string(result), nil
 }
 
 func parseOpenVPNStatus(output string) ([]*vpn.VpnClient, error) {

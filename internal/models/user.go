@@ -3,15 +3,7 @@ package models
 import "time"
 
 type User struct {
-	ID int64 `gorm:"primaryKey"`
-
-	Username string `gorm:"uniqueIndex"`
-	Password string
-
-	TGChat *int64 `gorm:"uniqueIndex"`
-
+	ID        int64 `gorm:"primaryKey"`
 	ExpiredAt time.Time
-	Active    bool
-
-	Trial bool
+	Trial     bool
 }

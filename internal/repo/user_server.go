@@ -2,6 +2,7 @@ package repo
 
 import (
 	"miraclevpn/internal/models"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -21,17 +22,30 @@ func (r *UserServerRepository) FindByUserIDServerID(userID int64, serverID int64
 	if err := r.db.Where("user_id = ? AND server_id = ?", userID, serverID).First(&userServer).Error; err != nil {
 		return nil, err
 	}
+
+	userServer.ConfigFile = ""
+
 	return &userServer, nil
 }
 
-func (r *UserServerRepository) CreateOrUpdate(userID int64, serverID int64, config string) error {
+func (r *UserServerRepository) CreateOrUpdate(userID int64, serverID int64, config string, configFile string) error {
 	userServer := models.UserServer{
-		UserID:   userID,
-		ServerID: serverID,
-		Config:   config,
+		UserID:     userID,
+		ServerID:   serverID,
+		Config:     config,
+		ConfigFile: configFile,
 	}
 	if err := r.db.Save(&userServer).Error; err != nil {
 		return err
 	}
 	return nil
+}
+
+func (r *UserServerRepository) FindExpired(expiration time.Duration) ([]*models.UserServer, error) {
+	var us []*models.UserServer
+	if err := r.db.Where("updated_at < ?", time.Now().Add(expiration*-1)).Find(&us).Error; err != nil {
+		return nil, err
+	}
+
+	return us, nil
 }

@@ -6,17 +6,21 @@ import (
 	"miraclevpn/internal/services/servers"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ServerController struct {
 	srv *servers.ServersService
+
+	configDurationSec time.Duration
 }
 
-func NewServerController(srv *servers.ServersService) *ServerController {
+func NewServerController(srv *servers.ServersService, configDurationSec time.Duration) *ServerController {
 	return &ServerController{
 		srv,
+		configDurationSec,
 	}
 }
 
@@ -46,8 +50,9 @@ func (c *ServerController) GetServersByRegion(ctx *gin.Context) {
 }
 
 type GetServerRes struct {
-	Server *models.Server `json:"server"`
-	Config string         `json:"config"`
+	Server           *models.Server `json:"server"`
+	Config           string         `json:"config"`
+	ConfigExpiration int64          `json:"config_expiration"`
 }
 
 func (c *ServerController) GetServer(ctx *gin.Context) {
@@ -80,8 +85,9 @@ func (c *ServerController) GetServer(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, GetServerRes{
-		Server: server,
-		Config: config,
+		Server:           server,
+		Config:           config,
+		ConfigExpiration: int64(c.configDurationSec),
 	})
 }
 
