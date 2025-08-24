@@ -25,7 +25,7 @@ func NewAuthController(srv *auth.AuthService, jwt *crypt.JwtService) *AuthContro
 }
 
 type PostLoginReq struct {
-	UID int64 `json:"UID" binding:"required"`
+	Data map[string]interface{} `json:"data" binding:"required"`
 }
 
 type PostLoginRes struct {
@@ -43,6 +43,7 @@ func (c *AuthController) PostLogin(ctx *gin.Context) {
 
 		panic(err)
 	}
+
 	token, err := c.srv.Authenticate(req.UID)
 	if err != nil {
 		panic(err)
