@@ -1,17 +1,17 @@
-// Package vpn_daemon provides vpn daemons for the application.
 package vpndaemon
 
 import (
 	"fmt"
 	"miraclevpn/internal/services/sender"
 	"miraclevpn/internal/services/servers"
+	"miraclevpn/internal/services/vpn"
 	"miraclevpn/internal/utils"
 	"time"
 
 	"go.uber.org/zap"
 )
 
-type VpnRefreshDaemon struct {
+type VpnRemoveExpiredDaemon struct {
 	srvSrv *servers.ServersService
 
 	sender  sender.Sender
@@ -26,8 +26,8 @@ type VpnRefreshDaemon struct {
 	expiration time.Duration
 }
 
-func NewVpnRefreshDaemon(duration time.Duration, logger *zap.Logger, srvSrv *servers.ServersService, sender sender.Sender, adminTo string, expiration time.Duration) *VpnRefreshDaemon {
-	return &VpnRefreshDaemon{
+func NewVpnRemoveExpiredDaemon(duration time.Duration, logger *zap.Logger, vpnClient vpn.VpnService, srvSrv *servers.ServersService, sender sender.Sender, adminTo string, expiration time.Duration) *VpnRemoveExpiredDaemon {
+	return &VpnRemoveExpiredDaemon{
 		srvSrv:     srvSrv,
 		duration:   duration,
 		logger:     logger,
@@ -38,7 +38,7 @@ func NewVpnRefreshDaemon(duration time.Duration, logger *zap.Logger, srvSrv *ser
 	}
 }
 
-func (d *VpnRefreshDaemon) Start() {
+func (d *VpnRemoveExpiredDaemon) Start() {
 	ticker := time.NewTicker(d.duration)
 
 	d.logger.Info("Starting VPN refresh daemon",
@@ -63,14 +63,10 @@ func (d *VpnRefreshDaemon) Start() {
 	}()
 }
 
-func (d *VpnRefreshDaemon) Stop() {
+func (d *VpnRemoveExpiredDaemon) Stop() {
 	close(d.stopChan)
 }
 
-func (d *VpnRefreshDaemon) do() error {
-	if err := d.srvSrv.UpdateExpired(d.expiration); err != nil {
-		return err
-	}
-
-	return nil
+func (d *VpnRemoveExpiredDaemon) do() error {
+	return d.srvSrv.RemoveExpiredConfigs()
 }

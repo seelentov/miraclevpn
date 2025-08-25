@@ -212,3 +212,7 @@ func (s *ServersService) UpdateExpired(expiration time.Duration) error {
 		zap.Int("processed_count", len(uss)))
 	return nil
 }
+
+func (s *ServersService) RemoveExpiredConfigs() {
+
+}

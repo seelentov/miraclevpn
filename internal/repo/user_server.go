@@ -49,3 +49,12 @@ func (r *UserServerRepository) FindExpired(expiration time.Duration) ([]*models.
 
 	return us, nil
 }
+
+func (r *UserServerRepository) FindExpiredByUser() ([]*models.UserServer, error) {
+	var us []*models.UserServer
+	if err := r.db.Where("updated_at < ?", time.Now()).Find(&us).Error; err != nil {
+		return nil, err
+	}
+
+	return us, nil
+}
