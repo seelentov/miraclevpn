@@ -18,7 +18,7 @@ func NewUserRepository(db *gorm.DB, crypt cryptt.CryptService, freeTrial time.Du
 	return &UserRepository{db, crypt, freeTrial}
 }
 
-func (r *UserRepository) FindByID(userID int64) (*models.User, error) {
+func (r *UserRepository) FindByID(userID string) (*models.User, error) {
 	var u models.User
 
 	if err := r.db.First(&u, userID).Error; err != nil {
@@ -28,7 +28,7 @@ func (r *UserRepository) FindByID(userID int64) (*models.User, error) {
 	return &u, nil
 }
 
-func (r *UserRepository) Create(uID int64) (*models.User, error) {
+func (r *UserRepository) Create(uID string) (*models.User, error) {
 	u := models.User{
 		ID:        uID,
 		Trial:     true,

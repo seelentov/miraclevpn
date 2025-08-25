@@ -4,7 +4,6 @@ go 1.24.6
 
 require (
 	github.com/go-playground/validator/v10 v10.20.0
-	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	go.uber.org/zap v1.27.0
 	gorm.io/driver/postgres v1.6.0
 )

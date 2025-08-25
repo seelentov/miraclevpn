@@ -29,25 +29,28 @@ func NewAuthService(userRepo *repo.UserRepository, jwtService *crypt.JwtService,
 	}
 }
 
-func (s *AuthService) Authenticate(uID int64) (string, error) {
+func (s *AuthService) Authenticate(uID string) (string, error) {
 	_, err := s.userRepo.FindByID(uID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			s.logger.Info("failed to find user by UID, register", zap.Int64("UID", uID))
+			s.logger.Info("failed to find user by UID, register", zap.String("UID", uID))
 			_, err := s.userRepo.Create(uID)
 			if err != nil {
-				s.logger.Info("failed to register user", zap.Int64("UID", uID), zap.Error(err))
+				s.logger.Info("failed to register user", zap.String("UID", uID), zap.Error(err))
 				return "", err
 			}
-			s.logger.Info("user registered successfully", zap.Int64("UID", uID))
+			s.logger.Info("user registered successfully", zap.String("UID", uID))
 		} else {
-			s.logger.Info("failed to find user by UID", zap.Int64("UID", uID), zap.Error(err))
+			s.logger.Info("failed to find user by UID", zap.String("UID", uID), zap.Error(err))
 			return "", err
 		}
 	}
 
-	token, err := s.jwtService.GenerateToken(strconv.Itoa(int(uID)), s.jwtDuration)
-	s.logger.Debug("user authenticated", zap.Int64("user_id", uID), zap.Int64("UID", uID))
+	token, err := s.jwtService.GenerateToken(uID, s.jwtDuration)
+	if err != nil {
+		return "", err
+	}
+	s.logger.Debug("user authenticated", zap.String("user_id", uID), zap.String("UID", uID))
 	return token, nil
 }
 

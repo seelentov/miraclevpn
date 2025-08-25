@@ -14,13 +14,13 @@ import (
 type ServerController struct {
 	srv *servers.ServersService
 
-	configDurationSec time.Duration
+	configDuration time.Duration
 }
 
-func NewServerController(srv *servers.ServersService, configDurationSec time.Duration) *ServerController {
+func NewServerController(srv *servers.ServersService, configDuration time.Duration) *ServerController {
 	return &ServerController{
 		srv,
-		configDurationSec,
+		configDuration,
 	}
 }
 
@@ -57,10 +57,6 @@ type GetServerRes struct {
 
 func (c *ServerController) GetServer(ctx *gin.Context) {
 	userID, _ := ctx.Get("user_id")
-	userIDInt, err := strconv.ParseInt(userID.(string), 10, 64)
-	if err != nil {
-		panic(err)
-	}
 
 	id := ctx.Param("id")
 	if id == "" {
@@ -79,7 +75,7 @@ func (c *ServerController) GetServer(ctx *gin.Context) {
 		}
 		panic(err)
 	}
-	config, err := c.srv.GetConfig(userIDInt, idInt)
+	config, err := c.srv.GetConfig(userID.(string), idInt)
 	if err != nil {
 		panic(err)
 	}
@@ -87,7 +83,7 @@ func (c *ServerController) GetServer(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, GetServerRes{
 		Server:           server,
 		Config:           config,
-		ConfigExpiration: int64(c.configDurationSec),
+		ConfigExpiration: int64(c.configDuration),
 	})
 }
 

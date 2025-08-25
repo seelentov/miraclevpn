@@ -25,7 +25,7 @@ func NewAuthController(srv *auth.AuthService, jwt *crypt.JwtService) *AuthContro
 }
 
 type PostLoginReq struct {
-	Data map[string]interface{} `json:"data" binding:"required"`
+	UID string `json:"uid" binding:"required"`
 }
 
 type PostLoginRes struct {

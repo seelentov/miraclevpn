@@ -67,15 +67,15 @@ func (s *ServersService) GetServerByID(id int64) (*models.Server, error) {
 	return server, nil
 }
 
-func (s *ServersService) GetConfig(userID int64, serverID int64) (string, error) {
-	s.logger.Debug("getting config", zap.Int64("user_id", userID), zap.Int64("server_id", serverID))
+func (s *ServersService) GetConfig(userID string, serverID int64) (string, error) {
+	s.logger.Debug("getting config", zap.String("user_id", userID), zap.Int64("server_id", serverID))
 	us, err := s.ursSrvRepo.FindByUserIDServerID(userID, serverID)
 	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-		s.logger.Error("failed to find user-server config", zap.Int64("user_id", userID), zap.Int64("server_id", serverID), zap.Error(err))
+		s.logger.Error("failed to find user-server config", zap.String("user_id", userID), zap.Int64("server_id", serverID), zap.Error(err))
 		return "", err
 	}
 	if us != nil {
-		s.logger.Debug("config found for user-server", zap.Int64("user_id", userID), zap.Int64("server_id", serverID))
+		s.logger.Debug("config found for user-server", zap.String("user_id", userID), zap.Int64("server_id", serverID))
 		return us.Config, nil
 	}
 
@@ -87,23 +87,23 @@ func (s *ServersService) GetConfig(userID int64, serverID int64) (string, error)
 
 	usr, err := s.ursRepo.FindByID(userID)
 	if err != nil {
-		s.logger.Error("failed to find user by id", zap.Int64("user_id", userID), zap.Error(err))
+		s.logger.Error("failed to find user by id", zap.String("user_id", userID), zap.Error(err))
 		return "", err
 	}
 
-	s.logger.Debug("creating VPN user", zap.String("host", srv.Host), zap.Int64("UID", usr.ID))
+	s.logger.Debug("creating VPN user", zap.String("host", srv.Host), zap.String("UID", usr.ID))
 	config, username, err := s.vpnService.CreateUser(srv.Host)
 	if err != nil {
-		s.logger.Error("failed to create VPN user", zap.String("host", srv.Host), zap.Int64("UID", usr.ID), zap.Error(err))
+		s.logger.Error("failed to create VPN user", zap.String("host", srv.Host), zap.String("UID", usr.ID), zap.Error(err))
 		return "", err
 	}
 
 	if err := s.ursSrvRepo.CreateOrUpdate(userID, serverID, config, username); err != nil {
-		s.logger.Error("failed to save user-server config", zap.Int64("user_id", userID), zap.Int64("server_id", serverID), zap.Error(err))
+		s.logger.Error("failed to save user-server config", zap.String("user_id", userID), zap.Int64("server_id", serverID), zap.Error(err))
 		return "", err
 	}
 
-	s.logger.Debug("vpn config created and saved", zap.Int64("user_id", userID), zap.Int64("server_id", serverID))
+	s.logger.Debug("vpn config created and saved", zap.String("user_id", userID), zap.Int64("server_id", serverID))
 	return config, nil
 }
 
@@ -148,7 +148,7 @@ func (s *ServersService) UpdateExpired(expiration time.Duration) error {
 		s.logger.Debug("processing association",
 			zap.Int("index", i),
 			zap.Int64("serverID", us.ServerID),
-			zap.Int64("userID", us.UserID))
+			zap.String("userID", us.UserID))
 
 		srv, err := s.srvRepo.FindByID(us.ServerID)
 		if err != nil {
@@ -161,50 +161,50 @@ func (s *ServersService) UpdateExpired(expiration time.Duration) error {
 		usr, err := s.ursRepo.FindByID(us.UserID)
 		if err != nil {
 			s.logger.Error("failed to find user by ID",
-				zap.Int64("userID", us.UserID),
+				zap.String("userID", us.UserID),
 				zap.Error(err))
 			return err
 		}
 
 		s.logger.Info("deleting expired VPN user",
 			zap.String("host", srv.Host),
-			zap.Int64("userID", usr.ID))
+			zap.String("userID", usr.ID))
 
 		if err := s.vpnService.DeleteUser(srv.Host, us.ConfigFile); err != nil {
 			s.logger.Error("failed to delete VPN user",
 				zap.String("host", srv.Host),
-				zap.Int64("userID", usr.ID),
+				zap.String("userID", usr.ID),
 				zap.Error(err))
 			return err
 		}
 
 		s.logger.Info("creating new VPN user",
 			zap.String("host", srv.Host),
-			zap.Int64("userID", usr.ID))
+			zap.String("userID", usr.ID))
 
 		config, fileName, err := s.vpnService.CreateUser(srv.Host)
 		if err != nil {
 			s.logger.Error("failed to create VPN user",
 				zap.String("host", srv.Host),
-				zap.Int64("userID", usr.ID),
+				zap.String("userID", usr.ID),
 				zap.Error(err))
 			return err
 		}
 
 		s.logger.Info("updating user-server association",
-			zap.Int64("userID", usr.ID),
+			zap.String("userID", usr.ID),
 			zap.Int64("serverID", srv.ID))
 
 		if err := s.ursSrvRepo.CreateOrUpdate(usr.ID, srv.ID, config, fileName); err != nil {
 			s.logger.Error("failed to update user-server association",
-				zap.Int64("userID", usr.ID),
+				zap.String("userID", usr.ID),
 				zap.Int64("serverID", srv.ID),
 				zap.Error(err))
 			return err
 		}
 
 		s.logger.Info("successfully updated expired association",
-			zap.Int64("userID", usr.ID),
+			zap.String("userID", usr.ID),
 			zap.Int64("serverID", srv.ID))
 	}
 

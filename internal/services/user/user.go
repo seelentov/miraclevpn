@@ -26,17 +26,17 @@ func NewUserService(userRepo *repo.UserRepository, logger *zap.Logger) *UserServ
 	}
 }
 
-func (s *UserService) GetUserByID(id int64) (*models.User, error) {
-	s.logger.Debug("getting user by id", zap.Int64("user_id", id))
+func (s *UserService) GetUserByID(id string) (*models.User, error) {
+	s.logger.Debug("getting user by id", zap.String("user_id", id))
 	u, err := s.userRepo.FindByID(id)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			s.logger.Warn("user not found", zap.Int64("user_id", id))
+			s.logger.Warn("user not found", zap.String("user_id", id))
 			return nil, ErrNotFound
 		}
-		s.logger.Error("failed to get user by id", zap.Int64("user_id", id), zap.Error(err))
+		s.logger.Error("failed to get user by id", zap.String("user_id", id), zap.Error(err))
 		return nil, err
 	}
-	s.logger.Debug("user fetched", zap.Int64("user_id", id))
+	s.logger.Debug("user fetched", zap.String("user_id", id))
 	return u, nil
 }

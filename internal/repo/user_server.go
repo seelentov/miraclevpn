@@ -17,7 +17,7 @@ func NewUserServerRepository(db *gorm.DB) *UserServerRepository {
 	}
 }
 
-func (r *UserServerRepository) FindByUserIDServerID(userID int64, serverID int64) (*models.UserServer, error) {
+func (r *UserServerRepository) FindByUserIDServerID(userID string, serverID int64) (*models.UserServer, error) {
 	var userServer models.UserServer
 	if err := r.db.Where("user_id = ? AND server_id = ?", userID, serverID).First(&userServer).Error; err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func (r *UserServerRepository) FindByUserIDServerID(userID int64, serverID int64
 	return &userServer, nil
 }
 
-func (r *UserServerRepository) CreateOrUpdate(userID int64, serverID int64, config string, configFile string) error {
+func (r *UserServerRepository) CreateOrUpdate(userID string, serverID int64, config string, configFile string) error {
 	userServer := models.UserServer{
 		UserID:     userID,
 		ServerID:   serverID,

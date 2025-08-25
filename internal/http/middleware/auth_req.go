@@ -3,7 +3,6 @@ package middleware
 import (
 	"miraclevpn/internal/repo"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -16,12 +15,7 @@ func RequireAuthMiddleware(userRepo *repo.UserRepository) gin.HandlerFunc {
 			return
 		}
 
-		userIDInt, err := strconv.ParseInt(userID.(string), 10, 64)
-		if err != nil {
-			panic(err)
-		}
-
-		u, err := userRepo.FindByID(userIDInt)
+		u, err := userRepo.FindByID(userID.(string))
 		if err != nil || u == nil {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Пользователь не авторизован"})
 			return
