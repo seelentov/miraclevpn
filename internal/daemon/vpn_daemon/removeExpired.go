@@ -68,5 +68,5 @@ func (d *VpnRemoveExpiredDaemon) Stop() {
 }
 
 func (d *VpnRemoveExpiredDaemon) do() error {
-	return d.srvSrv.RemoveExpiredConfigs()
+	return d.srvSrv.RemoveExpiredByUser()
 }

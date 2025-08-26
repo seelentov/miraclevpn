@@ -4,7 +4,7 @@ import (
 	"log"
 	"math"
 	"miraclevpn/internal/daemon/healthcheck"
-	"miraclevpn/internal/daemon/vpn_daemon"
+	vpndaemon "miraclevpn/internal/daemon/vpn_daemon"
 	"miraclevpn/internal/http/middleware"
 	"net/http"
 	"os"
@@ -17,6 +17,7 @@ import (
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/auth"
 	"miraclevpn/internal/services/crypt"
+	"miraclevpn/internal/services/info"
 	"miraclevpn/internal/services/servers"
 	"miraclevpn/internal/services/user"
 	"miraclevpn/pkg/ovpn"
@@ -102,6 +103,9 @@ func main() {
 	userRepo := repo.NewUserRepository(gormDB, argonSrv, time.Duration(freeTrial)*time.Second)
 	serverRepo := repo.NewServerRepository(gormDB)
 	userServerRepo := repo.NewUserServerRepository(gormDB)
+	newsRepo := repo.NewNewsRepository(gormDB)
+	infoRepo := repo.NewInfoRepository(gormDB)
+	keyValueRepo := repo.NewKeyValueRepository(gormDB)
 
 	// VPN
 	vpnSrv := ovpn.NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile, sshConfigsDir)
@@ -110,11 +114,13 @@ func main() {
 	authSrv := auth.NewAuthService(userRepo, jwtSrv, time.Duration(jwtDuration)*time.Minute, logger.Logger)
 	userSrv := user.NewUserService(userRepo, logger.Logger)
 	serversSrv := servers.NewServersService(userServerRepo, serverRepo, userRepo, vpnSrv, logger.Logger)
+	infoSrv := info.NewInfoService(newsRepo, infoRepo, keyValueRepo)
 
 	// Контроллеры
 	authCtrl := controller.NewAuthController(authSrv, jwtSrv)
 	userCtrl := controller.NewUserController(userSrv)
 	serverCtrl := controller.NewServerController(serversSrv, time.Second*time.Duration(vpnConfigExpiration))
+	infoCtrl := controller.NewInfoController(infoSrv)
 
 	//Админ TG
 	tgTokenHealthCheck := os.Getenv("TG_HEALTHCHECK_TOKEN")
@@ -122,7 +128,7 @@ func main() {
 	tgSenderHealthCheck := tg.NewTgClient(tgTokenHealthCheck, "")
 
 	//Демоны
-	vpnRefreshDaemon := vpn_daemon.NewVpnRefreshDaemon(time.Second*time.Duration(vpnRefreshConfigInterval), logger.Logger, vpnSrv, serversSrv, tgSenderHealthCheck, tgChatIDHealthCheck, time.Second*time.Duration(vpnConfigExpiration))
+	vpnRefreshDaemon := vpndaemon.NewVpnRefreshDaemon(time.Second*time.Duration(vpnRefreshConfigInterval), logger.Logger, serversSrv, tgSenderHealthCheck, tgChatIDHealthCheck, time.Second*time.Duration(vpnConfigExpiration))
 	vpnRefreshDaemon.Start()
 	defer vpnRefreshDaemon.Stop()
 
@@ -193,6 +199,12 @@ func main() {
 					serverGroup.GET("/region/:region", serverCtrl.GetServersByRegion)
 					serverGroup.GET("/:id", serverCtrl.GetServer)
 					serverGroup.GET("/status/:id", serverCtrl.GetServerStatus)
+				}
+				info := o.Group("/info")
+				{
+					info.GET("/news", infoCtrl.GetNews)
+					info.GET("/tech_work", infoCtrl.GetTechWork)
+					info.GET("/{slug}", infoCtrl.GetInfo)
 				}
 			}
 		}

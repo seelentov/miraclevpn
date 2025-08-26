@@ -213,6 +213,6 @@ func (s *ServersService) UpdateExpired(expiration time.Duration) error {
 	return nil
 }
 
-func (s *ServersService) RemoveExpiredConfigs() {
-
+func (s *ServersService) RemoveExpiredByUser() error {
+	return s.ursSrvRepo.RemoveExpiredByUser()
 }

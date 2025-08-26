@@ -1,4 +1,4 @@
-// Package vpn_daemon provides vpn daemons for the application.
+// Package vpndaemon provides vpn daemons for the application.
 package vpndaemon
 
 import (
