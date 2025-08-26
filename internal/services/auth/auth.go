@@ -5,11 +5,14 @@ import (
 	"errors"
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/crypt"
-	"strconv"
 	"time"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
+)
+
+var (
+	ErrBanned = errors.New("user is banned")
 )
 
 type AuthService struct {
@@ -30,7 +33,7 @@ func NewAuthService(userRepo *repo.UserRepository, jwtService *crypt.JwtService,
 }
 
 func (s *AuthService) Authenticate(uID string) (string, error) {
-	_, err := s.userRepo.FindByID(uID)
+	u, err := s.userRepo.FindByID(uID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			s.logger.Info("failed to find user by UID, register", zap.String("UID", uID))
@@ -46,6 +49,11 @@ func (s *AuthService) Authenticate(uID string) (string, error) {
 		}
 	}
 
+	if u != nil && u.Banned {
+		s.logger.Warn("user is banned", zap.String("user_id", uID))
+		return "", ErrBanned
+	}
+
 	token, err := s.jwtService.GenerateToken(uID, s.jwtDuration)
 	if err != nil {
 		return "", err
@@ -54,10 +62,10 @@ func (s *AuthService) Authenticate(uID string) (string, error) {
 	return token, nil
 }
 
-func (s *AuthService) GenerateToken(userID int64) (string, error) {
-	token, err := s.jwtService.GenerateToken(strconv.Itoa(int(userID)), s.jwtDuration)
+func (s *AuthService) GenerateToken(userID string) (string, error) {
+	token, err := s.jwtService.GenerateToken(userID, s.jwtDuration)
 	if err != nil {
-		s.logger.Error("failed to generate refresh token", zap.Int64("user_id", userID), zap.Error(err))
+		s.logger.Error("failed to generate refresh token", zap.String("user_id", userID), zap.Error(err))
 		return "", err
 	}
 	return token, nil

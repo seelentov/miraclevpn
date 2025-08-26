@@ -61,6 +61,13 @@ func main() {
 		log.Fatal("failed get VPN_REFRESH_INTERVAL_SEC: " + err.Error())
 	}
 
+	vpnRemoveExpiredIntervalStr := os.Getenv("VPN_REMOVE_EXPIRED_INTERVAL_SEC")
+	vpnRemoveExpiredInterval, err := strconv.Atoi(vpnRemoveExpiredIntervalStr)
+
+	if err != nil {
+		log.Fatal("failed get VPN_REFRESH_INTERVAL_SEC: " + err.Error())
+	}
+
 	vpnConfigExpiration, err := strconv.Atoi(vpnConfigExpirationStt)
 	if err != nil {
 		log.Fatal("failed get VPN_CONFIG_DIRATION_SEC: " + err.Error())
@@ -119,7 +126,7 @@ func main() {
 	// Контроллеры
 	authCtrl := controller.NewAuthController(authSrv, jwtSrv)
 	userCtrl := controller.NewUserController(userSrv)
-	serverCtrl := controller.NewServerController(serversSrv, time.Second*time.Duration(vpnConfigExpiration))
+	serverCtrl := controller.NewServerController(serversSrv, vpnConfigExpiration)
 	infoCtrl := controller.NewInfoController(infoSrv)
 
 	//Админ TG
@@ -131,6 +138,10 @@ func main() {
 	vpnRefreshDaemon := vpndaemon.NewVpnRefreshDaemon(time.Second*time.Duration(vpnRefreshConfigInterval), logger.Logger, serversSrv, tgSenderHealthCheck, tgChatIDHealthCheck, time.Second*time.Duration(vpnConfigExpiration))
 	vpnRefreshDaemon.Start()
 	defer vpnRefreshDaemon.Stop()
+
+	vpnRemoveExpiredDaemon := vpndaemon.NewVpnRemoveExpiredDaemon(time.Second*time.Duration(vpnRemoveExpiredInterval), logger.Logger, serversSrv, tgSenderHealthCheck, tgChatIDHealthCheck)
+	vpnRemoveExpiredDaemon.Start()
+	defer vpnRemoveExpiredDaemon.Stop()
 
 	//Самомониторинг
 	if !debug {
@@ -204,7 +215,7 @@ func main() {
 				{
 					info.GET("/news", infoCtrl.GetNews)
 					info.GET("/tech_work", infoCtrl.GetTechWork)
-					info.GET("/{slug}", infoCtrl.GetInfo)
+					info.GET("/:slug", infoCtrl.GetInfo)
 				}
 			}
 		}

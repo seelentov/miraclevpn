@@ -28,7 +28,7 @@ func NewInfoService(newsRepo *repo.NewsRepository, infoRepo *repo.InfoRepository
 }
 
 func (r *InfoService) GetNews(userID string) ([]*models.News, error) {
-	return r.newsRepo.FindUnreaded(userID)
+	return r.newsRepo.FindUnread(userID)
 }
 
 func (r *InfoService) GetInfo(slug string) (*models.Info, error) {
@@ -52,7 +52,7 @@ func (r *InfoService) GetTechWork() (bool, string, error) {
 		return false, "", nil
 	}
 
-	techWorkText, err := r.KeyValue.Get("tech_work")
+	techWorkText, err := r.KeyValue.Get("tech_work_text")
 	if err != nil {
 		return false, "", err
 	}

@@ -12,6 +12,7 @@ import (
 
 var (
 	ErrNotFound = errors.New("user not found")
+	ErrBanned   = errors.New("user is banned")
 )
 
 type UserService struct {
@@ -37,6 +38,12 @@ func (s *UserService) GetUserByID(id string) (*models.User, error) {
 		s.logger.Error("failed to get user by id", zap.String("user_id", id), zap.Error(err))
 		return nil, err
 	}
+
+	if u.Banned {
+		s.logger.Warn("user is banned", zap.String("user_id", id))
+		return nil, ErrBanned
+	}
+
 	s.logger.Debug("user fetched", zap.String("user_id", id))
 	return u, nil
 }

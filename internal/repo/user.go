@@ -21,7 +21,7 @@ func NewUserRepository(db *gorm.DB, crypt cryptt.CryptService, freeTrial time.Du
 func (r *UserRepository) FindByID(userID string) (*models.User, error) {
 	var u models.User
 
-	if err := r.db.First(&u, userID).Error; err != nil {
+	if err := r.db.Where("id = ? AND active = ?", userID, true).First(&u).Error; err != nil {
 		return nil, err
 	}
 
@@ -33,6 +33,7 @@ func (r *UserRepository) Create(uID string) (*models.User, error) {
 		ID:        uID,
 		Trial:     true,
 		ExpiredAt: time.Now().Add(r.freeTrial),
+		Active:    true,
 	}
 
 	if err := r.db.Save(&u).Error; err != nil {

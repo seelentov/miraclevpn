@@ -11,6 +11,10 @@ var migrate = []any{
 	&models.User{},
 	&models.Server{},
 	&models.UserServer{},
+	&models.Info{},
+	&models.KeyValue{},
+	&models.News{},
+	&models.NewsRead{},
 }
 
 func NewConn(dialector gorm.Dialector) (*gorm.DB, error) {
@@ -23,5 +27,26 @@ func NewConn(dialector gorm.Dialector) (*gorm.DB, error) {
 		return nil, err
 	}
 
+	if err := seed(db); err != nil {
+		return nil, err
+	}
+
 	return db, nil
+}
+
+func seed(db *gorm.DB) (err error) {
+	err = keyValuesSeed(db)
+	return
+}
+
+func keyValuesSeed(db *gorm.DB) error {
+	db.Save(&models.KeyValue{
+		Key:   "tech_work",
+		Value: "false",
+	})
+	db.Save(&models.KeyValue{
+		Key:   "tech_work_text",
+		Value: "В данный момент на сайте технические работы",
+	})
+	return nil
 }

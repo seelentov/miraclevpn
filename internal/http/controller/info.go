@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"errors"
 	"miraclevpn/internal/models"
 	"miraclevpn/internal/services/info"
 	"net/http"
@@ -53,10 +54,14 @@ func (c *InfoController) GetInfo(ctx *gin.Context) {
 		return
 	}
 
-	info, err := c.srv.GetInfo(slug)
+	i, err := c.srv.GetInfo(slug)
 	if err != nil {
+		if errors.Is(err, info.ErrNotFound) {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "информация не найдена"})
+			return
+		}
 		panic(err)
 	}
 
-	ctx.JSON(http.StatusOK, GetInfoRes(info))
+	ctx.JSON(http.StatusOK, GetInfoRes(i))
 }

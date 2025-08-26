@@ -2,9 +2,10 @@
 package ovpn
 
 import (
-	"bufio"
 	"crypto/rand"
+	"encoding/csv"
 	"fmt"
+	"io"
 	"math/big"
 	"miraclevpn/internal/services/vpn"
 	"os/exec"
@@ -34,12 +35,6 @@ func NewClient(username, statusPath, createUserFile, revokeUserFile string, user
 
 func (c *Client) GetStatus(host string) (*vpn.Status, error) {
 	status := &vpn.Status{}
-	if err := c.checkServerOnline(host); err != nil {
-		status.Online = false
-		return status, err
-	}
-	status.Online = true
-
 	cmd := exec.Command(
 		"ssh",
 		"-o StrictHostKeyChecking=no",
@@ -52,7 +47,7 @@ func (c *Client) GetStatus(host string) (*vpn.Status, error) {
 		return nil, err
 	}
 
-	clients, err := parseOpenVPNStatus(string(output))
+	clients, err := ParseOpenVPNStatus(string(output))
 	if err != nil {
 		return nil, err
 	}
@@ -118,16 +113,6 @@ func (c *Client) DeleteUser(host string, username string) error {
 	return nil
 }
 
-func (c *Client) checkServerOnline(host string) error {
-	cmd := exec.Command("ping", "-c", "1", "-W", "1", host)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("server %s is unreachable: %v\nOutput: %s", host, err, string(output))
-	}
-
-	return nil
-}
-
 func (c *Client) generateUsername(host string) (string, error) {
 	cmd := exec.Command(
 		"ssh",
@@ -179,62 +164,77 @@ func generateRandomDigits(length int) (string, error) {
 	return string(result), nil
 }
 
-func generateRandomDigitsSimple(length int) (string, error) {
-	const digits = "0123456789"
-	result := make([]byte, length)
-
-	for i := 0; i < length; i++ {
-		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(digits))))
-		if err != nil {
-			return "", err
-		}
-		result[i] = digits[num.Int64()]
-	}
-
-	return string(result), nil
-}
-
-func parseOpenVPNStatus(output string) ([]*vpn.VpnClient, error) {
+func ParseOpenVPNStatus(statusText string) ([]*vpn.VpnClient, error) {
 	var clients []*vpn.VpnClient
-	var inClientList bool
+	var inClientSection bool
 
-	scanner := bufio.NewScanner(strings.NewReader(output))
-	for scanner.Scan() {
-		line := scanner.Text()
+	reader := csv.NewReader(strings.NewReader(statusText))
+	reader.Comma = ','
+	reader.FieldsPerRecord = -1 // Allow variable number of fields
 
-		if strings.HasPrefix(line, "OpenVPN CLIENT LIST") {
-			inClientList = true
-			continue
-		}
-
-		if strings.HasPrefix(line, "ROUTING TABLE") {
+	for {
+		record, err := reader.Read()
+		if err == io.EOF {
 			break
 		}
-
-		if !inClientList || line == "" || strings.HasPrefix(line, "Common Name,") || strings.HasPrefix(line, "Updated,") {
-			continue
-		}
-
-		parts := strings.Split(line, ",")
-		if len(parts) < 5 {
-			continue
-		}
-
-		bytesRecv, _ := strconv.ParseInt(parts[2], 10, 64)
-		bytesSent, _ := strconv.ParseInt(parts[3], 10, 64)
-		connectedSince, err := time.Parse("Mon Jan 2 15:04:05 2006", parts[4])
 		if err != nil {
+			return nil, fmt.Errorf("error reading CSV: %v", err)
+		}
+
+		if len(record) == 0 {
 			continue
 		}
 
-		clients = append(clients, &vpn.VpnClient{
-			CommonName:     parts[0],
-			RealAddress:    parts[1],
-			BytesReceived:  bytesRecv,
-			BytesSent:      bytesSent,
-			ConnectedSince: connectedSince,
-		})
+		// Check for section headers
+		if record[0] == "HEADER" && len(record) > 1 {
+			if record[1] == "CLIENT_LIST" {
+				inClientSection = true
+			} else {
+				inClientSection = false
+			}
+			continue
+		}
+
+		// Process CLIENT_LIST records
+		if inClientSection && record[0] == "CLIENT_LIST" {
+			client, err := parseClientRecord(record)
+			if err != nil {
+				return nil, err
+			}
+			clients = append(clients, client)
+		}
 	}
 
 	return clients, nil
+}
+
+func parseClientRecord(record []string) (*vpn.VpnClient, error) {
+	if len(record) < 9 {
+		return nil, fmt.Errorf("invalid CLIENT_LIST record: expected at least 9 fields, got %d", len(record))
+	}
+
+	// Parse bytes received and sent
+	bytesReceived, err := strconv.ParseInt(record[5], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid bytes received: %v", err)
+	}
+
+	bytesSent, err := strconv.ParseInt(record[6], 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid bytes sent: %v", err)
+	}
+
+	// Parse connected since timestamp
+	connectedSince, err := time.Parse("2006-01-02 15:04:05", record[7])
+	if err != nil {
+		return nil, fmt.Errorf("invalid timestamp format: %v", err)
+	}
+
+	return &vpn.VpnClient{
+		CommonName:     record[1],
+		RealAddress:    record[2],
+		BytesReceived:  bytesReceived,
+		BytesSent:      bytesSent,
+		ConnectedSince: connectedSince,
+	}, nil
 }

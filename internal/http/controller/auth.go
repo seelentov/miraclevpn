@@ -3,7 +3,6 @@ package controller
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"miraclevpn/internal/services/auth"
 	"miraclevpn/internal/services/crypt"
@@ -62,12 +61,8 @@ type PostRefreshRes struct {
 
 func (c *AuthController) PostRefresh(ctx *gin.Context) {
 	userID, _ := ctx.Get("user_id")
-	userIDInt, err := strconv.ParseInt(userID.(string), 10, 64)
-	if err != nil {
-		panic(err)
-	}
 
-	token, err := c.srv.GenerateToken(userIDInt)
+	token, err := c.srv.GenerateToken(userID.(string))
 	if err != nil {
 		panic(err)
 	}

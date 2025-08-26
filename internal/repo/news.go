@@ -2,6 +2,7 @@ package repo
 
 import (
 	"miraclevpn/internal/models"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -16,18 +17,28 @@ func NewNewsRepository(db *gorm.DB) *NewsRepository {
 	}
 }
 
-func (r *NewsRepository) FindUnreaded(userID string) ([]*models.News, error) {
+func (r *NewsRepository) FindUnread(userID string) ([]*models.News, error) {
 	var news []*models.News
-	if err := r.db.Where("readers NOT LIKE ?", "%"+userID+"%").Find(&news).Error; err != nil {
+	if err := r.db.Where("id NOT IN (SELECT news_id FROM news_reads WHERE user_id = ?) AND active = ?", userID, true).
+		Find(&news).Error; err != nil {
 		return nil, err
 	}
 
-	for _, n := range news {
-		n.Readers += userID + ","
-	}
+	if len(news) > 0 {
+		now := time.Now()
+		newsReads := make([]*models.NewsRead, len(news))
 
-	if err := r.db.Save(&news).Error; err != nil {
-		return nil, err
+		for i, n := range news {
+			newsReads[i] = &models.NewsRead{
+				UserID: userID,
+				NewsID: n.ID,
+				ReadAt: now,
+			}
+		}
+
+		if err := r.db.Create(&newsReads).Error; err != nil {
+			return nil, err
+		}
 	}
 
 	return news, nil

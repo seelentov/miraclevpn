@@ -18,7 +18,7 @@ func NewInfoRepository(db *gorm.DB) *InfoRepository {
 
 func (r *InfoRepository) FindBySlug(slug string) (*models.Info, error) {
 	var info models.Info
-	if err := r.db.Where("slug =", slug).First(&info).Error; err != nil {
+	if err := r.db.Where("slug = ?", slug).First(&info).Error; err != nil {
 		return nil, err
 	}
 

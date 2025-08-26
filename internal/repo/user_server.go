@@ -60,10 +60,14 @@ func (r *UserServerRepository) FindExpiredByUser() ([]*models.UserServer, error)
 }
 
 func (r *UserServerRepository) RemoveExpiredByUser() error {
+	expiredUserIDs := r.db.
+		Table("users").
+		Select("id").
+		Where("expired_at < ?", time.Now())
+
 	result := r.db.
 		Table("user_servers").
-		Joins("JOIN users ON user_servers.user_id = users.id").
-		Where("users.expired_at < ?", time.Now()).
+		Where("user_id IN (?)", expiredUserIDs).
 		Delete(&models.UserServer{})
 
 	if result.Error != nil {

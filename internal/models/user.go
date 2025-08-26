@@ -7,4 +7,5 @@ type User struct {
 	ExpiredAt time.Time
 	Trial     bool
 	Banned    bool
+	Active    bool
 }
