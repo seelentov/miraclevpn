@@ -216,3 +216,11 @@ func (s *ServersService) UpdateExpired(expiration time.Duration) error {
 func (s *ServersService) RemoveExpiredByUser() error {
 	return s.ursSrvRepo.RemoveExpiredByUser()
 }
+
+func (s *ServersService) FindPreview() ([]*models.Server, error) {
+	return s.srvRepo.FindPreview()
+}
+
+func (s *ServersService) SendRequest(region string, userID string) error {
+	return s.srvRepo.SendRequest(region, userID)
+}

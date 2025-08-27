@@ -3,11 +3,13 @@ package controller
 import (
 	"errors"
 	"miraclevpn/internal/models"
+	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/servers"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 type ServerController struct {
@@ -119,4 +121,46 @@ func (c *ServerController) GetServerStatus(ctx *gin.Context) {
 		Server:            server,
 		CurrentUsersCount: currentUsersCount,
 	})
+}
+
+type GetPreviewRes []*models.Server
+
+func (c *ServerController) GetPreview(ctx *gin.Context) {
+	srv, err := c.srv.FindPreview()
+	if err != nil {
+		panic(err)
+	}
+
+	ctx.JSON(http.StatusOK, GetPreviewRes(srv))
+}
+
+type PostRequestReq struct {
+	Region string `json:"region"`
+}
+
+type PostRequestRes []*models.Server
+
+func (c *ServerController) PostRequest(ctx *gin.Context) {
+	userID, _ := ctx.Get("user_id")
+
+	var req PostRequestReq
+	if err := ctx.ShouldBindJSON(&req); err != nil {
+		var ve validator.ValidationErrors
+		if errors.As(err, &ve) {
+			ctx.JSON(http.StatusBadRequest, gin.H{"errors": HandleValidation(ve, req)})
+			return
+		}
+
+		panic(err)
+	}
+
+	if err := c.srv.SendRequest(req.Region, userID.(string)); err != nil {
+		if errors.Is(err, repo.ErrReqAlreadyExist) {
+			ctx.JSON(http.StatusOK, nil)
+		}
+
+		panic(err)
+	}
+
+	ctx.JSON(http.StatusOK, nil)
 }

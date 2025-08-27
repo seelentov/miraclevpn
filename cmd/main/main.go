@@ -210,6 +210,9 @@ func main() {
 					serverGroup.GET("/region/:region", serverCtrl.GetServersByRegion)
 					serverGroup.GET("/:id", serverCtrl.GetServer)
 					serverGroup.GET("/status/:id", serverCtrl.GetServerStatus)
+
+					serverGroup.GET("/preview", serverCtrl.GetPreview)
+					serverGroup.POST("/preview", serverCtrl.PostRequest)
 				}
 				info := o.Group("/info")
 				{
