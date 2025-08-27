@@ -14,16 +14,18 @@ var (
 )
 
 type InfoService struct {
-	newsRepo *repo.NewsRepository
-	infoRepo *repo.InfoRepository
-	KeyValue *repo.KeyValueRepository
+	newsRepo  *repo.NewsRepository
+	infoRepo  *repo.InfoRepository
+	keyValue  *repo.KeyValueRepository
+	payPlRepo *repo.PaymentPlanRepository
 }
 
-func NewInfoService(newsRepo *repo.NewsRepository, infoRepo *repo.InfoRepository, keyValue *repo.KeyValueRepository) *InfoService {
+func NewInfoService(newsRepo *repo.NewsRepository, infoRepo *repo.InfoRepository, keyValue *repo.KeyValueRepository, payPlRepo *repo.PaymentPlanRepository) *InfoService {
 	return &InfoService{
-		newsRepo: newsRepo,
-		infoRepo: infoRepo,
-		KeyValue: keyValue,
+		newsRepo:  newsRepo,
+		infoRepo:  infoRepo,
+		keyValue:  keyValue,
+		payPlRepo: payPlRepo,
 	}
 }
 
@@ -43,7 +45,7 @@ func (r *InfoService) GetInfo(slug string) (*models.Info, error) {
 }
 
 func (r *InfoService) GetTechWork() (bool, string, error) {
-	techWork, err := r.KeyValue.Get("tech_work")
+	techWork, err := r.keyValue.Get("tech_work")
 	if err != nil {
 		return false, "", err
 	}
@@ -52,7 +54,7 @@ func (r *InfoService) GetTechWork() (bool, string, error) {
 		return false, "", nil
 	}
 
-	techWorkText, err := r.KeyValue.Get("tech_work_text")
+	techWorkText, err := r.keyValue.Get("tech_work_text")
 	if err != nil {
 		return false, "", err
 	}
@@ -65,5 +67,9 @@ func (r *InfoService) GetInfos() ([]*models.Info, error) {
 }
 
 func (r *InfoService) GetSupport() (map[string]string, error) {
-	return r.KeyValue.GetLike("%\\_support")
+	return r.keyValue.GetLike("%\\_support")
+}
+
+func (r *InfoService) GetPaymentPlans() ([]*models.PaymentPlan, error) {
+	return r.payPlRepo.FindAll()
 }

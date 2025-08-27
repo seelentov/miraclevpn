@@ -87,3 +87,14 @@ func (c *InfoController) GetSupport(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, GetSupportRes(i))
 }
+
+type GetPaymentPlans []*models.PaymentPlan
+
+func (c *InfoController) GetPaymentPlans(ctx *gin.Context) {
+	i, err := c.srv.GetPaymentPlans()
+	if err != nil {
+		panic(err)
+	}
+
+	ctx.JSON(http.StatusOK, GetPaymentPlans(i))
+}

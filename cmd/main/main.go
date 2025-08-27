@@ -113,6 +113,7 @@ func main() {
 	newsRepo := repo.NewNewsRepository(gormDB)
 	infoRepo := repo.NewInfoRepository(gormDB)
 	keyValueRepo := repo.NewKeyValueRepository(gormDB)
+	payPlRepo := repo.NewPaymentPlanRepository(gormDB)
 
 	// VPN
 	vpnSrv := ovpn.NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile, sshConfigsDir)
@@ -121,7 +122,7 @@ func main() {
 	authSrv := auth.NewAuthService(userRepo, jwtSrv, time.Duration(jwtDuration)*time.Minute, logger.Logger)
 	userSrv := user.NewUserService(userRepo, logger.Logger)
 	serversSrv := servers.NewServersService(userServerRepo, serverRepo, userRepo, vpnSrv, logger.Logger)
-	infoSrv := info.NewInfoService(newsRepo, infoRepo, keyValueRepo)
+	infoSrv := info.NewInfoService(newsRepo, infoRepo, keyValueRepo, payPlRepo)
 
 	// Контроллеры
 	authCtrl := controller.NewAuthController(authSrv, jwtSrv)
@@ -220,6 +221,7 @@ func main() {
 					info.GET("/support", infoCtrl.GetSupport)
 					info.GET("/news", infoCtrl.GetNews)
 					info.GET("/tech_work", infoCtrl.GetTechWork)
+					info.GET("/payment", infoCtrl.GetPaymentPlans)
 					info.GET("/:slug", infoCtrl.GetInfo)
 				}
 			}
