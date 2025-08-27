@@ -1,10 +1,10 @@
 package models
 
 type News struct {
-	ID int64 `gorm:"primaryKey"`
+	ID int64 `gorm:"primaryKey" json:"id"`
 
-	Title string
-	Text  string
+	Title string `json:"title"`
+	Text  string `json:"text"`
 
-	Active bool
+	Active bool `json:"active"`
 }

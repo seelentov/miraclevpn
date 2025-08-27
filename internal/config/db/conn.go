@@ -15,6 +15,8 @@ var migrate = []any{
 	&models.KeyValue{},
 	&models.News{},
 	&models.NewsRead{},
+	&models.PaymentPlan{},
+	&models.Requests{},
 }
 
 func NewConn(dialector gorm.Dialector) (*gorm.DB, error) {

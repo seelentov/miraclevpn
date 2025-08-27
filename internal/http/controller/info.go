@@ -65,3 +65,25 @@ func (c *InfoController) GetInfo(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, GetInfoRes(i))
 }
+
+type GetInfosRes []*models.Info
+
+func (c *InfoController) GetInfos(ctx *gin.Context) {
+	i, err := c.srv.GetInfos()
+	if err != nil {
+		panic(err)
+	}
+
+	ctx.JSON(http.StatusOK, GetInfosRes(i))
+}
+
+type GetSupportRes map[string]string
+
+func (c *InfoController) GetSupport(ctx *gin.Context) {
+	i, err := c.srv.GetSupport()
+	if err != nil {
+		panic(err)
+	}
+
+	ctx.JSON(http.StatusOK, GetSupportRes(i))
+}

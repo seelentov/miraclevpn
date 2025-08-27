@@ -216,6 +216,8 @@ func main() {
 				}
 				info := o.Group("/info")
 				{
+					info.GET("", infoCtrl.GetInfos)
+					info.GET("/support", infoCtrl.GetSupport)
 					info.GET("/news", infoCtrl.GetNews)
 					info.GET("/tech_work", infoCtrl.GetTechWork)
 					info.GET("/:slug", infoCtrl.GetInfo)

@@ -27,3 +27,18 @@ func (r *KeyValueRepository) Get(key string) (string, error) {
 	}
 	return kv.Value, nil
 }
+
+func (r *KeyValueRepository) GetLike(keyLike string) (map[string]string, error) {
+	var kvs []models.KeyValue
+	result := make(map[string]string)
+
+	if err := r.db.Where("key LIKE ?", keyLike).Find(&kvs).Error; err != nil {
+		return nil, err
+	}
+
+	for _, kv := range kvs {
+		result[kv.Key] = kv.Value
+	}
+
+	return result, nil
+}

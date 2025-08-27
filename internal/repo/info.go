@@ -18,9 +18,18 @@ func NewInfoRepository(db *gorm.DB) *InfoRepository {
 
 func (r *InfoRepository) FindBySlug(slug string) (*models.Info, error) {
 	var info models.Info
-	if err := r.db.Where("slug = ?", slug).First(&info).Error; err != nil {
+	if err := r.db.Where("slug = ? AND active = ?", slug, true).First(&info).Error; err != nil {
 		return nil, err
 	}
 
 	return &info, nil
+}
+
+func (r *InfoRepository) FindAll() ([]*models.Info, error) {
+	var info []*models.Info
+	if err := r.db.Where("active = ?", true).Find(&info).Error; err != nil {
+		return nil, err
+	}
+
+	return info, nil
 }

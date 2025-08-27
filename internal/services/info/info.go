@@ -59,3 +59,11 @@ func (r *InfoService) GetTechWork() (bool, string, error) {
 
 	return true, techWorkText, nil
 }
+
+func (r *InfoService) GetInfos() ([]*models.Info, error) {
+	return r.infoRepo.FindAll()
+}
+
+func (r *InfoService) GetSupport() (map[string]string, error) {
+	return r.KeyValue.GetLike("%\\_support")
+}

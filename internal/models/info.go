@@ -1,8 +1,9 @@
 package models
 
 type Info struct {
-	ID    int64  `gorm:"primaryKey"`
-	Slug  string `gorm:"uniqueIndex"`
-	Title string
-	Text  string
+	ID     int64  `gorm:"primaryKey" json:"id"`
+	Slug   string `gorm:"uniqueIndex" json:"slug"`
+	Title  string `json:"title"`
+	Text   string `json:"text"`
+	Active bool   `json:"active"`
 }

@@ -2,17 +2,17 @@
 package models
 
 type Server struct {
-	ID int64 `gorm:"primaryKey"`
+	ID int64 `gorm:"primaryKey" json:"id"`
 
-	Host    string `gorm:"uniqueIndex"`
-	Region  string
-	Service string
+	Host    string `gorm:"uniqueIndex" json:"host"`
+	Region  string `json:"region"`
+	Service string `json:"service"`
 
-	RegionFlagURL string
+	RegionFlagURL string `json:"region_flag_url"`
 
-	MaxUsers string
-	MinUsers string
+	MaxUsers string `json:"max_users"`
+	MinUsers string `json:"min_users"`
 
-	Preview bool
-	Active  bool
+	Preview bool `json:"preview"`
+	Active  bool `json:"active"`
 }
