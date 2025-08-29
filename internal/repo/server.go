@@ -4,6 +4,7 @@ package repo
 import (
 	"errors"
 	"miraclevpn/internal/models"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -103,8 +104,9 @@ func (r *ServerRepository) SendRequest(region string, userID string) error {
 	}
 
 	if err := r.db.Save(&models.Requests{
-		UserID: userID,
-		Region: region,
+		UserID:    userID,
+		Region:    region,
+		CreatedAt: time.Now(),
 	}).Error; err != nil {
 		return err
 	}

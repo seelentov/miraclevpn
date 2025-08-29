@@ -6,6 +6,7 @@ import (
 	"miraclevpn/internal/models"
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/vpn"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -127,6 +128,7 @@ func (s *ServersService) GetServerStatus(serverID int64) (server *models.Server,
 
 	stat, err := s.vpnService.GetStatus(srv.Host)
 	if err != nil {
+		s.logger.Error("failed to get status", zap.Int64("server_id", serverID), zap.Error(err))
 		return nil, 0, err
 	}
 
@@ -223,4 +225,34 @@ func (s *ServersService) FindPreview() ([]*models.Server, error) {
 
 func (s *ServersService) SendRequest(region string, userID string) error {
 	return s.srvRepo.SendRequest(region, userID)
+}
+
+func (s *ServersService) GetRegionStatus(region string) (servers []*models.Server, currentUsersCount int, err error) {
+	servers, err = s.srvRepo.FindByRegion(region)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	currentUsersCount = 0
+
+	wg := sync.WaitGroup{}
+
+	for _, sr := range servers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			stat, err := s.vpnService.GetStatus(sr.Host)
+			if err != nil {
+				s.logger.Error("failed to get status", zap.Int64("server_id", sr.ID), zap.Error(err))
+			}
+
+			currentUsersCount += len(stat.Clients)
+		}()
+
+	}
+
+	wg.Wait()
+
+	return servers, currentUsersCount, nil
+
 }

@@ -76,6 +76,12 @@ func (c *ServerController) GetServer(ctx *gin.Context) {
 		}
 		panic(err)
 	}
+
+	if server.Preview {
+		ctx.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "Сервер не найден"})
+		return
+	}
+
 	config, err := c.srv.GetConfig(userID.(string), idInt)
 	if err != nil {
 		panic(err)
@@ -123,6 +129,27 @@ func (c *ServerController) GetServerStatus(ctx *gin.Context) {
 	})
 }
 
+type GetRegionStatusRes struct {
+	Servers           []*models.Server `json:"servers"`
+	CurrentUsersCount int              `json:"current_users_count"`
+}
+
+func (c *ServerController) GetRegionStatus(ctx *gin.Context) {
+	region := ctx.Param("region")
+	if region == "" {
+		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "ID не указан"})
+		return
+	}
+	servers, currentUsersCount, err := c.srv.GetRegionStatus(region)
+	if err != nil {
+		panic(err)
+	}
+	ctx.JSON(http.StatusOK, GetRegionStatusRes{
+		Servers:           servers,
+		CurrentUsersCount: currentUsersCount,
+	})
+}
+
 type GetPreviewRes []*models.Server
 
 func (c *ServerController) GetPreview(ctx *gin.Context) {
@@ -135,7 +162,7 @@ func (c *ServerController) GetPreview(ctx *gin.Context) {
 }
 
 type PostRequestReq struct {
-	Region string `json:"region"`
+	Region string `json:"region" binding:"required"`
 }
 
 type PostRequestRes []*models.Server
@@ -157,6 +184,7 @@ func (c *ServerController) PostRequest(ctx *gin.Context) {
 	if err := c.srv.SendRequest(req.Region, userID.(string)); err != nil {
 		if errors.Is(err, repo.ErrReqAlreadyExist) {
 			ctx.JSON(http.StatusOK, nil)
+			return
 		}
 
 		panic(err)
