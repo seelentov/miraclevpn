@@ -114,12 +114,13 @@ func main() {
 	infoRepo := repo.NewInfoRepository(gormDB)
 	keyValueRepo := repo.NewKeyValueRepository(gormDB)
 	payPlRepo := repo.NewPaymentPlanRepository(gormDB)
+	authDataRepo := repo.NewAuthDataRepository(gormDB)
 
 	// VPN
 	vpnSrv := ovpn.NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile, sshConfigsDir)
 
 	// Сервисы
-	authSrv := auth.NewAuthService(userRepo, jwtSrv, time.Duration(jwtDuration)*time.Minute, logger.Logger)
+	authSrv := auth.NewAuthService(userRepo, authDataRepo, jwtSrv, time.Duration(jwtDuration)*time.Minute, logger.Logger)
 	userSrv := user.NewUserService(userRepo, logger.Logger)
 	serversSrv := servers.NewServersService(userServerRepo, serverRepo, userRepo, vpnSrv, logger.Logger)
 	infoSrv := info.NewInfoService(newsRepo, infoRepo, keyValueRepo, payPlRepo)

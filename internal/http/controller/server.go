@@ -9,7 +9,6 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 )
 
 type ServerController struct {
@@ -172,12 +171,6 @@ func (c *ServerController) PostRequest(ctx *gin.Context) {
 
 	var req PostRequestReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		var ve validator.ValidationErrors
-		if errors.As(err, &ve) {
-			ctx.JSON(http.StatusBadRequest, gin.H{"errors": HandleValidation(ve, req)})
-			return
-		}
-
 		panic(err)
 	}
 

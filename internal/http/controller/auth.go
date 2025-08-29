@@ -8,7 +8,6 @@ import (
 	"miraclevpn/internal/services/crypt"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 )
 
 type AuthController struct {
@@ -24,7 +23,8 @@ func NewAuthController(srv *auth.AuthService, jwt *crypt.JwtService) *AuthContro
 }
 
 type PostLoginReq struct {
-	UID string `json:"uid" binding:"required"`
+	UID  string                 `json:"uid" binding:"required"`
+	Data map[string]interface{} `json:"data" binding:"required"`
 }
 
 type PostLoginRes struct {
@@ -34,17 +34,18 @@ type PostLoginRes struct {
 func (c *AuthController) PostLogin(ctx *gin.Context) {
 	var req PostLoginReq
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		var ve validator.ValidationErrors
-		if errors.As(err, &ve) {
-			ctx.JSON(http.StatusBadRequest, gin.H{"errors": HandleValidation(ve, req)})
-			return
-		}
-
 		panic(err)
 	}
 
-	token, err := c.srv.Authenticate(req.UID)
+	req.Data["ip"] = ctx.ClientIP()
+
+	token, err := c.srv.Authenticate(req.UID, req.Data)
 	if err != nil {
+		if errors.Is(err, auth.ErrBanned) {
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Пользователь заблокирован"})
+			return
+		}
+
 		panic(err)
 	}
 

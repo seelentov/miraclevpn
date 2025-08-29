@@ -16,23 +16,25 @@ var (
 )
 
 type AuthService struct {
-	userRepo *repo.UserRepository
+	userRepo     *repo.UserRepository
+	authDataRepo *repo.AuthDataRepository
 
 	jwtService  *crypt.JwtService
 	jwtDuration time.Duration
 	logger      *zap.Logger
 }
 
-func NewAuthService(userRepo *repo.UserRepository, jwtService *crypt.JwtService, jwtDuration time.Duration, logger *zap.Logger) *AuthService {
+func NewAuthService(userRepo *repo.UserRepository, authDataRepo *repo.AuthDataRepository, jwtService *crypt.JwtService, jwtDuration time.Duration, logger *zap.Logger) *AuthService {
 	return &AuthService{
-		userRepo:    userRepo,
-		logger:      logger,
-		jwtService:  jwtService,
-		jwtDuration: jwtDuration,
+		userRepo:     userRepo,
+		logger:       logger,
+		jwtService:   jwtService,
+		jwtDuration:  jwtDuration,
+		authDataRepo: authDataRepo,
 	}
 }
 
-func (s *AuthService) Authenticate(uID string) (string, error) {
+func (s *AuthService) Authenticate(uID string, data map[string]interface{}) (string, error) {
 	u, err := s.userRepo.FindByID(uID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -52,6 +54,13 @@ func (s *AuthService) Authenticate(uID string) (string, error) {
 	if u != nil && u.Banned {
 		s.logger.Warn("user is banned", zap.String("user_id", uID))
 		return "", ErrBanned
+	}
+
+	if err := s.authDataRepo.Add(
+		uID,
+		data,
+	); err != nil {
+		return "", err
 	}
 
 	token, err := s.jwtService.GenerateToken(uID, s.jwtDuration)
