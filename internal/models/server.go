@@ -4,9 +4,10 @@ package models
 type Server struct {
 	ID int64 `gorm:"primaryKey" json:"id"`
 
-	Host    string `gorm:"uniqueIndex" json:"host"`
-	Region  string `json:"region"`
-	Service string `json:"service"`
+	Host       string `gorm:"uniqueIndex" json:"host"`
+	Region     string `json:"region"`
+	RegionName string `json:"region_name"`
+	Service    string `json:"service"`
 
 	RegionFlagURL string `json:"region_flag_url"`
 

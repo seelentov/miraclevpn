@@ -84,7 +84,7 @@ func (r *ServerRepository) FindPreview() ([]*models.Server, error) {
 
 func (r *ServerRepository) RequestExist(region string, userID string) (bool, error) {
 	var re models.Requests
-	if err := r.db.Where("user_id = ? AND region = ?", region, userID).First(&re).Error; err != nil {
+	if err := r.db.Where("user_id = ? AND region = ?", userID, region).First(&re).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
