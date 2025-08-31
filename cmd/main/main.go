@@ -165,6 +165,10 @@ func main() {
 		vpnHealthCheck := healthcheck.NewVpnHealthCheck(healthCheckDuration, logger.Logger, vpnSrv, serverRepo, tgSenderHealthCheck, tgChatIDHealthCheck)
 		vpnHealthCheck.Start()
 		defer vpnHealthCheck.Stop()
+
+		tgHealthCheck := healthcheck.NewTgHealthCheck(healthCheckDuration, logger.Logger, tgSenderHealthCheck, tgChatIDHealthCheck)
+		tgHealthCheck.Start()
+		defer tgHealthCheck.Stop()
 	}
 
 	r := gin.Default()

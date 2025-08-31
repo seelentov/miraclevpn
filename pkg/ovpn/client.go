@@ -44,14 +44,15 @@ func (c *Client) GetStatus(host string) (*vpn.Status, error) {
 
 	output, err := cmd.Output()
 	if err != nil {
-		return nil, err
+		return status, err
 	}
 
 	clients, err := ParseOpenVPNStatus(string(output))
 	if err != nil {
-		return nil, err
+		return status, err
 	}
 
+	status.Online = true
 	status.Clients = clients
 	return status, nil
 }

@@ -53,7 +53,10 @@ func (d *DBHealthCheck) Start() {
 			case <-ticker.C:
 				if err := d.do(sqlDB); err != nil {
 					er := utils.GetStackTrace(err)
-					d.sender.SendMessage(d.adminTo, fmt.Sprintf("Database health check failed: %v", er))
+					err := d.sender.SendMessage(d.adminTo, fmt.Sprintf("Database health check failed: %v", er))
+					if err != nil {
+						d.logger.Error("ADMIN TG SEND FAILED", zap.Error(err))
+					}
 					d.logger.Error("Database health check failed", zap.String("error", er))
 				} else {
 					d.logger.Debug("Database health check passed")

@@ -6,6 +6,7 @@ import (
 	"miraclevpn/internal/services/sender"
 	"miraclevpn/internal/services/vpn"
 	"miraclevpn/internal/utils"
+	"sync"
 	"time"
 
 	"go.uber.org/zap"
@@ -47,13 +48,7 @@ func (d *VpnHealthCheck) Start() {
 		for {
 			select {
 			case <-ticker.C:
-				if err := d.do(); err != nil {
-					er := utils.GetStackTrace(err)
-					d.sender.SendMessage(d.adminTo, fmt.Sprintf("VPN health check failed: %v", er))
-					d.logger.Error("VPN health check failed", zap.String("error", er))
-				} else {
-					d.logger.Debug("VPN health check passed")
-				}
+				d.do()
 			case <-d.stopChan:
 				d.logger.Info("Stopping VPN health check")
 				return
@@ -66,22 +61,44 @@ func (d *VpnHealthCheck) Stop() {
 	close(d.stopChan)
 }
 
-func (d *VpnHealthCheck) do() error {
+func (d *VpnHealthCheck) do() {
 	srvs, err := d.srvRepo.FindAll()
 	if err != nil {
-		return err
+		d.logger.Error("VPN health check failed", zap.Error(err))
+		return
 	}
+
+	wg := sync.WaitGroup{}
 
 	for _, srv := range srvs {
-		status, err := d.vpnClient.GetStatus(srv.Host)
-		if err != nil {
-			return err
-		}
+		wg.Add(1)
 
-		if !status.Online {
-			return fmt.Errorf("server %s is offline. err: %w", srv.Host, err)
-		}
+		go func() {
+			defer wg.Done()
+
+			status, err := d.vpnClient.GetStatus(srv.Host)
+			if err != nil {
+				er := utils.GetStackTrace(err)
+				err := d.sender.SendMessage(d.adminTo, fmt.Sprintf("VPN health check %s failed: %v", srv.Host, er))
+				if err != nil {
+					d.logger.Error("ADMIN TG SEND FAILED", zap.Error(err))
+				}
+				d.logger.Error("VPN health check failed", zap.String("host", srv.Host), zap.String("error", er))
+			} else {
+				d.logger.Info("VPN health check passed", zap.String("host", srv.Host))
+			}
+
+			tenPersentUsers := srv.MaxUsers - (srv.MaxUsers / 10)
+
+			clients := len(status.Clients)
+			if len(status.Clients) > tenPersentUsers {
+				d.sender.SendMessage(d.adminTo, fmt.Sprintf("VPN HIGHLOAD! on %s: %d/%d", srv.Host, clients, srv.MaxUsers))
+				if err != nil {
+					d.logger.Error("ADMIN TG SEND FAILED", zap.Error(err))
+				}
+			}
+		}()
 	}
 
-	return nil
+	wg.Wait()
 }
