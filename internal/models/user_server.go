@@ -6,8 +6,9 @@ type UserServer struct {
 	UserID   string `gorm:"primaryKey" json:"user_id"`
 	ServerID int64  `gorm:"primaryKey" json:"server_id"`
 
-	Config     string `json:"config"`
-	ConfigFile string `json:"config_file"`
+	Config            string  `json:"config"`
+	ConfigFile        string  `json:"config_file"`
+	ConfigFileExpired *string `json:"config_file_expired"`
 
 	UpdatedAt time.Time `json:"updated_at"`
 }

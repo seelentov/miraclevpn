@@ -28,12 +28,13 @@ func (r *UserServerRepository) FindByUserIDServerID(userID string, serverID int6
 	return &userServer, nil
 }
 
-func (r *UserServerRepository) CreateOrUpdate(userID string, serverID int64, config string, configFile string) error {
+func (r *UserServerRepository) CreateOrUpdate(userID string, serverID int64, config string, configFile string, configFileExpired *string) error {
 	userServer := models.UserServer{
-		UserID:     userID,
-		ServerID:   serverID,
-		Config:     config,
-		ConfigFile: configFile,
+		UserID:            userID,
+		ServerID:          serverID,
+		Config:            config,
+		ConfigFile:        configFile,
+		ConfigFileExpired: configFileExpired,
 	}
 	if err := r.db.Save(&userServer).Error; err != nil {
 		return err

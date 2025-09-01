@@ -99,7 +99,7 @@ func (s *ServersService) GetConfig(userID string, serverID int64) (string, error
 		return "", err
 	}
 
-	if err := s.ursSrvRepo.CreateOrUpdate(userID, serverID, config, username); err != nil {
+	if err := s.ursSrvRepo.CreateOrUpdate(userID, serverID, config, username, nil); err != nil {
 		s.logger.Error("failed to save user-server config", zap.String("user_id", userID), zap.Int64("server_id", serverID), zap.Error(err))
 		return "", err
 	}
@@ -172,12 +172,14 @@ func (s *ServersService) UpdateExpired(expiration time.Duration) error {
 			zap.String("host", srv.Host),
 			zap.String("userID", usr.ID))
 
-		if err := s.vpnService.DeleteUser(srv.Host, us.ConfigFile); err != nil {
-			s.logger.Error("failed to delete VPN user",
-				zap.String("host", srv.Host),
-				zap.String("userID", usr.ID),
-				zap.Error(err))
-			return err
+		if us.ConfigFileExpired != nil {
+			if err := s.vpnService.DeleteUser(srv.Host, *(us.ConfigFileExpired)); err != nil {
+				s.logger.Error("failed to delete VPN user",
+					zap.String("host", srv.Host),
+					zap.String("userID", usr.ID),
+					zap.Error(err))
+				return err
+			}
 		}
 
 		s.logger.Info("creating new VPN user",
@@ -197,7 +199,7 @@ func (s *ServersService) UpdateExpired(expiration time.Duration) error {
 			zap.String("userID", usr.ID),
 			zap.Int64("serverID", srv.ID))
 
-		if err := s.ursSrvRepo.CreateOrUpdate(usr.ID, srv.ID, config, fileName); err != nil {
+		if err := s.ursSrvRepo.CreateOrUpdate(usr.ID, srv.ID, config, fileName, &(us.ConfigFile)); err != nil {
 			s.logger.Error("failed to update user-server association",
 				zap.String("userID", usr.ID),
 				zap.Int64("serverID", srv.ID),
