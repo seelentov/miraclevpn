@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"math"
+	authdaemon "miraclevpn/internal/daemon/auth_daemon"
 	"miraclevpn/internal/daemon/healthcheck"
 	vpndaemon "miraclevpn/internal/daemon/vpn_daemon"
 	"miraclevpn/internal/http/middleware"
@@ -53,6 +54,8 @@ func main() {
 	sshRevokeUserFile := os.Getenv("SSH_REVOKE_USER_FILE")
 	sshConfigsDir := os.Getenv("SSH_CONFIGS_DIR")
 
+	proofKey := os.Getenv("prX[6|zmb1v&*//3{BN,DrI3[AFSy{37Xknox<=Pf~V$G=]/dLGl(3qUu$df3Tn")
+
 	vpnRefreshConfigIntervalStr := os.Getenv("VPN_REFRESH_INTERVAL_SEC")
 	vpnConfigExpirationStt := os.Getenv("VPN_CONFIG_DIRATION_SEC")
 
@@ -66,6 +69,13 @@ func main() {
 
 	if err != nil {
 		log.Fatal("failed get VPN_REFRESH_INTERVAL_SEC: " + err.Error())
+	}
+
+	authFindSuspiciousIntervalStr := os.Getenv("AUTH_FIND_SUSPICIOUS_INTERVAL_SEC")
+	authFindSuspiciousInterval, err := strconv.Atoi(authFindSuspiciousIntervalStr)
+
+	if err != nil {
+		log.Fatal("failed get AUTH_FIND_SUSPICIOUS_INTERVAL_SEC: " + err.Error())
 	}
 
 	vpnConfigExpiration, err := strconv.Atoi(vpnConfigExpirationStt)
@@ -145,6 +155,10 @@ func main() {
 	vpnRemoveExpiredDaemon.Start()
 	defer vpnRemoveExpiredDaemon.Stop()
 
+	authFindSuspiciosDaemon := authdaemon.NewAuthFindSuspicious(time.Second*time.Duration(authFindSuspiciousInterval), logger.Logger, authDataRepo, tgSenderHealthCheck, tgChatIDHealthCheck)
+	authFindSuspiciosDaemon.Start()
+	defer authFindSuspiciosDaemon.Stop()
+
 	//Самомониторинг
 	if !debug {
 		healthCheckIntervalSec := 60
@@ -179,17 +193,23 @@ func main() {
 		r.SetTrustedProxies([]string{"127.0.0.1", "::1"})
 	}
 
-	r.Use(middleware.Recovery(debug, tgSenderHealthCheck, tgChatIDHealthCheck, logger.Logger))
-	r.NoRoute(middleware.NotFound())
-	r.Use(middleware.SetUserIDMiddleware(jwtSrv))
 	r.Static("/storage", "./storage")
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "pong"})
 	})
 
+	r.NoRoute(middleware.NotFound())
+
 	api := r.Group("/api")
 	{
+		api.Use(middleware.Recovery(debug, tgSenderHealthCheck, tgChatIDHealthCheck, logger.Logger))
+		api.Use(middleware.SetUserIDMiddleware(jwtSrv))
+
+		if proofKey != "" {
+			api.Use(middleware.ProofMiddleware(proofKey))
+		}
+
 		v1 := api.Group("/v1")
 		{
 			auth := v1.Group("/auth")
