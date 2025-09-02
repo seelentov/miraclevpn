@@ -16,7 +16,7 @@ func ProofMiddleware(proofKey string) gin.HandlerFunc {
 			if err := banIPWithFail2ban(ip); err != nil {
 				panic(err)
 			}
-			panic("dont have proof")
+			panic("dont have proof: " + proofHeader)
 		}
 		ctx.Next()
 	}
