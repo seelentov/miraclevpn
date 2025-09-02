@@ -54,7 +54,7 @@ func main() {
 	sshRevokeUserFile := os.Getenv("SSH_REVOKE_USER_FILE")
 	sshConfigsDir := os.Getenv("SSH_CONFIGS_DIR")
 
-	proofKey := os.Getenv("prX[6|zmb1v&*//3{BN,DrI3[AFSy{37Xknox<=Pf~V$G=]/dLGl(3qUu$df3Tn")
+	proofKey := os.Getenv("MII_VPN_PROOF")
 
 	vpnRefreshConfigIntervalStr := os.Getenv("VPN_REFRESH_INTERVAL_SEC")
 	vpnConfigExpirationStt := os.Getenv("VPN_CONFIG_DIRATION_SEC")
