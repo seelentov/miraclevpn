@@ -3,6 +3,7 @@ package controller
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"miraclevpn/internal/services/auth"
 	"miraclevpn/internal/services/crypt"
@@ -11,14 +12,16 @@ import (
 )
 
 type AuthController struct {
-	srv *auth.AuthService
-	jwt *crypt.JwtService
+	srv         *auth.AuthService
+	jwt         *crypt.JwtService
+	jwtDuration time.Duration
 }
 
-func NewAuthController(srv *auth.AuthService, jwt *crypt.JwtService) *AuthController {
+func NewAuthController(srv *auth.AuthService, jwt *crypt.JwtService, jwtDuration time.Duration) *AuthController {
 	return &AuthController{
-		srv: srv,
-		jwt: jwt,
+		srv:         srv,
+		jwt:         jwt,
+		jwtDuration: jwtDuration,
 	}
 }
 
@@ -28,7 +31,8 @@ type PostLoginReq struct {
 }
 
 type PostLoginRes struct {
-	Token string `json:"token"`
+	Token         string        `json:"token"`
+	ExpirationMin time.Duration `json:"expiration_min"`
 }
 
 func (c *AuthController) PostLogin(ctx *gin.Context) {
@@ -50,14 +54,16 @@ func (c *AuthController) PostLogin(ctx *gin.Context) {
 	}
 
 	res := &PostLoginRes{
-		Token: token,
+		Token:         token,
+		ExpirationMin: c.jwtDuration,
 	}
 
 	ctx.JSON(http.StatusOK, res)
 }
 
 type PostRefreshRes struct {
-	Token string `json:"token"`
+	Token         string        `json:"token"`
+	ExpirationMin time.Duration `json:"expiration_min"`
 }
 
 func (c *AuthController) PostRefresh(ctx *gin.Context) {
@@ -68,6 +74,7 @@ func (c *AuthController) PostRefresh(ctx *gin.Context) {
 		panic(err)
 	}
 	ctx.JSON(http.StatusOK, &PostRefreshRes{
-		Token: token,
+		Token:         token,
+		ExpirationMin: c.jwtDuration,
 	})
 }

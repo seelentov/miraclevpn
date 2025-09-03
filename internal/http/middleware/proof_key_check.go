@@ -8,18 +8,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ProofMiddleware(proofKeys map[string]string) gin.HandlerFunc {
+func ProofMiddleware(proofKeys map[string]string, banIfFail bool) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		proofHeader := ctx.GetHeader("MII_VPN_PROOF")
-		version := ctx.GetHeader("APP_VERSION")
+		proofHeader := ctx.GetHeader("Mii-Vpn-Proof")
+		version := ctx.GetHeader("App-Version")
 		proofKey := proofKeys[version]
 
-		if proofKey != proofHeader {
+		if proofHeader == "" || version == "" || proofKey != proofHeader {
 			ip := ctx.ClientIP()
-			if err := banIPWithFail2ban(ip); err != nil {
-				panic(err)
+
+			if banIfFail {
+				if err := banIPWithFail2ban(ip); err != nil {
+					panic(err)
+				}
 			}
-			panic("dont have proof: expected " + proofHeader[:5] + "***" + proofHeader[len(proofHeader):] + " but got " + proofHeader[:5] + "***" + proofHeader[len(proofHeader):])
+
+			panic("dont have proof: " + ip + " expected " + proofHeader[:5] + "***" + proofHeader[len(proofHeader):] + " but got " + proofHeader[:5] + "***" + proofHeader[len(proofHeader):])
 		}
 
 		ctx.Next()
@@ -33,7 +37,6 @@ func banIPWithFail2ban(ip string) error {
 
 	cmd := exec.Command("sudo", "fail2ban-client", "set", "nginx-badrequests", "banip", ip)
 
-	// Выполняем команду
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("fail2ban command failed: %v, output: %s", err, string(output))

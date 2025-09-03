@@ -56,7 +56,7 @@ func main() {
 	sshConfigsDir := os.Getenv("SSH_CONFIGS_DIR")
 
 	proofKey := os.Getenv("MII_VPN_PROOF")
-
+	proofBanIfFail := os.Getenv("PROOF_BAN_IF_FAIL") == "true"
 	proofKeys := make(map[string]string)
 
 	if proofKey != "" {
@@ -154,7 +154,7 @@ func main() {
 	infoSrv := info.NewInfoService(newsRepo, infoRepo, keyValueRepo, payPlRepo)
 
 	// Контроллеры
-	authCtrl := controller.NewAuthController(authSrv, jwtSrv)
+	authCtrl := controller.NewAuthController(authSrv, jwtSrv, time.Duration(jwtDuration)*time.Minute)
 	userCtrl := controller.NewUserController(userSrv)
 	serverCtrl := controller.NewServerController(serversSrv, vpnConfigExpiration)
 	infoCtrl := controller.NewInfoController(infoSrv)
@@ -220,15 +220,14 @@ func main() {
 	r.NoRoute(middleware.NotFound())
 
 	api := r.Group("/api")
-
-	if len(proofKeys) > 0 {
-		log.Println("PROOF ACTIVATED")
-		api.Use(middleware.ProofMiddleware(proofKeys))
-	}
 	{
 		api.Use(middleware.Recovery(debug, tgSenderHealthCheck, tgChatIDHealthCheck, logger.Logger))
 		api.Use(middleware.SetUserIDMiddleware(jwtSrv))
 
+		if len(proofKeys) > 0 {
+			log.Println("PROOF ACTIVATED")
+			api.Use(middleware.ProofMiddleware(proofKeys, proofBanIfFail))
+		}
 		v1 := api.Group("/v1")
 		{
 			auth := v1.Group("/auth")
