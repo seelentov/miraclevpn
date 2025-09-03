@@ -226,7 +226,7 @@ func main() {
 
 		if len(proofKeys) > 0 {
 			log.Println("PROOF ACTIVATED")
-			api.Use(middleware.ProofMiddleware(proofKeys, proofBanIfFail))
+			api.Use(middleware.ProofMiddleware(proofKeys, proofBanIfFail, debug))
 		}
 		v1 := api.Group("/v1")
 		{

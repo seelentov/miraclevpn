@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ProofMiddleware(proofKeys map[string]string, banIfFail bool) gin.HandlerFunc {
+func ProofMiddleware(proofKeys map[string]string, banIfFail bool, debug bool) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		proofHeader := ctx.GetHeader("Mii-Vpn-Proof")
 		version := ctx.GetHeader("App-Version")
@@ -22,8 +22,11 @@ func ProofMiddleware(proofKeys map[string]string, banIfFail bool) gin.HandlerFun
 					panic(err)
 				}
 			}
-
-			panic("dont have proof: " + ip + " expected " + proofHeader[:5] + "***" + proofHeader[len(proofHeader):] + " but got " + proofHeader[:5] + "***" + proofHeader[len(proofHeader):])
+			if debug {
+				panic("dont have proof: " + ip + " expected " + proofKey + " but got " + proofHeader)
+			} else {
+				panic("dont have proof: " + ip + " expected " + proofKey[:5] + "***" + proofKey[len(proofKey)-5:] + " but got " + proofHeader[:5] + "***" + proofHeader[len(proofHeader)-5:])
+			}
 		}
 
 		ctx.Next()

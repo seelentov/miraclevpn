@@ -3,6 +3,7 @@ package middleware
 import (
 	"miraclevpn/internal/repo"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,6 +21,12 @@ func RequireAuthMiddleware(userRepo *repo.UserRepository) gin.HandlerFunc {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Пользователь не авторизован"})
 			return
 		}
+
+		if u.ExpiredAt.Before(time.Now()) {
+			ctx.AbortWithStatusJSON(http.StatusPaymentRequired, gin.H{"error": "Закончилась подписка аккаунта"})
+			return
+		}
+
 		ctx.Next()
 	}
 }
