@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"miraclevpn/internal/config/db"
@@ -56,6 +57,23 @@ func main() {
 
 	proofKey := os.Getenv("MII_VPN_PROOF")
 
+	proofKeys := make(map[string]string)
+
+	if proofKey != "" {
+		log.Println(proofKey[:3] + "***" + proofKey[len(proofKey)-3:])
+		for _, kv := range strings.Split(proofKey, "::") {
+			kvv := strings.Split(kv, ":")
+			if len(kvv) >= 2 {
+				proofKeys[kvv[0]] = kvv[1]
+				log.Println(kvv[0] + ":" + kvv[1][:3] + "***" + kvv[1][len(kvv[1])-3:])
+			}
+		}
+
+		if len(proofKeys) == 0 {
+			log.Println("PROOF KEY PROVIDED BUT INVALID FORMAT")
+		}
+	}
+
 	vpnRefreshConfigIntervalStr := os.Getenv("VPN_REFRESH_INTERVAL_SEC")
 	vpnConfigExpirationStt := os.Getenv("VPN_CONFIG_DIRATION_SEC")
 
@@ -68,7 +86,7 @@ func main() {
 	vpnRemoveExpiredInterval, err := strconv.Atoi(vpnRemoveExpiredIntervalStr)
 
 	if err != nil {
-		log.Fatal("failed get VPN_REFRESH_INTERVAL_SEC: " + err.Error())
+		log.Fatal("failed get VPN_REMOVE_EXPIRED_INTERVAL_SEC: " + err.Error())
 	}
 
 	authFindSuspiciousIntervalStr := os.Getenv("AUTH_FIND_SUSPICIOUS_INTERVAL_SEC")
@@ -202,13 +220,14 @@ func main() {
 	r.NoRoute(middleware.NotFound())
 
 	api := r.Group("/api")
+
+	if len(proofKeys) > 0 {
+		log.Println("PROOF ACTIVATED")
+		api.Use(middleware.ProofMiddleware(proofKeys))
+	}
 	{
 		api.Use(middleware.Recovery(debug, tgSenderHealthCheck, tgChatIDHealthCheck, logger.Logger))
 		api.Use(middleware.SetUserIDMiddleware(jwtSrv))
-
-		if proofKey != "" {
-			api.Use(middleware.ProofMiddleware(proofKey))
-		}
 
 		v1 := api.Group("/v1")
 		{

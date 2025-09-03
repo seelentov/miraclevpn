@@ -8,16 +8,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func ProofMiddleware(proofKey string) gin.HandlerFunc {
+func ProofMiddleware(proofKeys map[string]string) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		proofHeader := ctx.GetHeader("MII_VPN_PROOF")
+		version := ctx.GetHeader("APP_VERSION")
+		proofKey := proofKeys[version]
+
 		if proofKey != proofHeader {
 			ip := ctx.ClientIP()
 			if err := banIPWithFail2ban(ip); err != nil {
 				panic(err)
 			}
-			panic("dont have proof: " + proofHeader)
+			panic("dont have proof: expected " + proofHeader[:5] + "***" + proofHeader[len(proofHeader):] + " but got " + proofHeader[:5] + "***" + proofHeader[len(proofHeader):])
 		}
+
 		ctx.Next()
 	}
 }
