@@ -23,7 +23,7 @@ func RequireAuthMiddleware(userRepo *repo.UserRepository) gin.HandlerFunc {
 		}
 
 		if u.ExpiredAt.Before(time.Now()) {
-			ctx.AbortWithStatusJSON(http.StatusPaymentRequired, gin.H{"error": "Закончилась подписка аккаунта"})
+			ctx.AbortWithStatusJSON(http.StatusPaymentRequired, gin.H{"error": "Подписка истекла"})
 			return
 		}
 
