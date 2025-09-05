@@ -154,7 +154,7 @@ func main() {
 	infoSrv := info.NewInfoService(newsRepo, infoRepo, keyValueRepo, payPlRepo)
 
 	// Контроллеры
-	authCtrl := controller.NewAuthController(authSrv, jwtSrv, time.Duration(jwtDuration)*time.Minute)
+	authCtrl := controller.NewAuthController(authSrv, jwtSrv, jwtDuration)
 	userCtrl := controller.NewUserController(userSrv)
 	serverCtrl := controller.NewServerController(serversSrv, vpnConfigExpiration)
 	infoCtrl := controller.NewInfoController(infoSrv)

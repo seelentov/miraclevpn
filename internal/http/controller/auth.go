@@ -3,7 +3,6 @@ package controller
 import (
 	"errors"
 	"net/http"
-	"time"
 
 	"miraclevpn/internal/services/auth"
 	"miraclevpn/internal/services/crypt"
@@ -14,10 +13,10 @@ import (
 type AuthController struct {
 	srv         *auth.AuthService
 	jwt         *crypt.JwtService
-	jwtDuration time.Duration
+	jwtDuration int
 }
 
-func NewAuthController(srv *auth.AuthService, jwt *crypt.JwtService, jwtDuration time.Duration) *AuthController {
+func NewAuthController(srv *auth.AuthService, jwt *crypt.JwtService, jwtDuration int) *AuthController {
 	return &AuthController{
 		srv:         srv,
 		jwt:         jwt,
@@ -31,8 +30,8 @@ type PostLoginReq struct {
 }
 
 type PostLoginRes struct {
-	Token         string        `json:"token"`
-	ExpirationMin time.Duration `json:"expiration_min"`
+	Token         string `json:"token"`
+	ExpirationMin int    `json:"expiration_min"`
 }
 
 func (c *AuthController) PostLogin(ctx *gin.Context) {
@@ -62,8 +61,8 @@ func (c *AuthController) PostLogin(ctx *gin.Context) {
 }
 
 type PostRefreshRes struct {
-	Token         string        `json:"token"`
-	ExpirationMin time.Duration `json:"expiration_min"`
+	Token         string `json:"token"`
+	ExpirationMin int    `json:"expiration_min"`
 }
 
 func (c *AuthController) PostRefresh(ctx *gin.Context) {
