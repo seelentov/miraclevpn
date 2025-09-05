@@ -48,6 +48,9 @@ func (c *AuthController) PostLogin(ctx *gin.Context) {
 		if errors.Is(err, auth.ErrBanned) {
 			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Пользователь заблокирован"})
 			return
+		} else if errors.Is(err, auth.ErrExpired) {
+			ctx.AbortWithStatusJSON(http.StatusPaymentRequired, gin.H{"error": "Подписка истекла"})
+			return
 		}
 
 		panic(err)

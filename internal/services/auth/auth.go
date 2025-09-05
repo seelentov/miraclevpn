@@ -12,7 +12,8 @@ import (
 )
 
 var (
-	ErrBanned = errors.New("user is banned")
+	ErrBanned  = errors.New("user is banned")
+	ErrExpired = errors.New("user is expired")
 )
 
 type AuthService struct {
@@ -54,6 +55,11 @@ func (s *AuthService) Authenticate(uID string, data map[string]interface{}) (str
 	if u != nil && u.Banned {
 		s.logger.Warn("user is banned", zap.String("user_id", uID))
 		return "", ErrBanned
+	}
+
+	if u != nil && u.ExpiredAt.Before(time.Now()) {
+		s.logger.Warn("user expired", zap.String("user_id", uID))
+		return "", ErrExpired
 	}
 
 	if err := s.authDataRepo.Add(
