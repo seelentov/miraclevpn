@@ -82,9 +82,9 @@ func (r *ServerRepository) FindPreview() ([]*models.Server, error) {
 	return s, nil
 }
 
-func (r *ServerRepository) RequestExist(info string, userID string) (bool, error) {
+func (r *ServerRepository) RequestExist(item string, userID string) (bool, error) {
 	var re models.Request
-	if err := r.db.Where("user_id = ? AND info = ?", userID, info).First(&re).Error; err != nil {
+	if err := r.db.Where("user_id = ? AND item = ?", userID, item).First(&re).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return false, nil
 		}
@@ -94,8 +94,8 @@ func (r *ServerRepository) RequestExist(info string, userID string) (bool, error
 	return true, nil
 }
 
-func (r *ServerRepository) SendRequest(info string, userID string) error {
-	exist, err := r.RequestExist(info, userID)
+func (r *ServerRepository) SendRequest(item string, userID string) error {
+	exist, err := r.RequestExist(item, userID)
 	if err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func (r *ServerRepository) SendRequest(info string, userID string) error {
 
 	if err := r.db.Save(&models.Request{
 		UserID:    userID,
-		Info:      info,
+		Item:      item,
 		CreatedAt: time.Now(),
 	}).Error; err != nil {
 		return err

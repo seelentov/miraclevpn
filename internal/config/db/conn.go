@@ -16,7 +16,7 @@ var migrate = []any{
 	&models.News{},
 	&models.NewsRead{},
 	&models.PaymentPlan{},
-	&models.Requests{},
+	&models.Request{},
 	&models.AuthData{},
 }
 

@@ -40,7 +40,7 @@ func (c *AuthController) PostLogin(ctx *gin.Context) {
 		panic(err)
 	}
 
-	req.Data["ip"] = ctx.ClientIP()
+	req.Data["headers"] = ctx.Request.Header
 
 	token, err := c.srv.Authenticate(req.UID, req.Data)
 	if err != nil {
