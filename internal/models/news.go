@@ -7,4 +7,6 @@ type News struct {
 	Text  string `json:"text"`
 
 	Active bool `json:"active"`
+
+	Repeat bool `json:"repeat"`
 }

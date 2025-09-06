@@ -29,6 +29,9 @@ func (r *NewsRepository) FindUnread(userID string) ([]*models.News, error) {
 		newsReads := make([]*models.NewsRead, len(news))
 
 		for i, n := range news {
+			if n.Repeat {
+				continue
+			}
 			newsReads[i] = &models.NewsRead{
 				UserID: userID,
 				NewsID: n.ID,
