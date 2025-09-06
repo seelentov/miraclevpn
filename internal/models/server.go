@@ -16,4 +16,6 @@ type Server struct {
 
 	Preview bool `json:"preview"`
 	Active  bool `json:"active"`
+
+	Priority int `json:"priority"`
 }

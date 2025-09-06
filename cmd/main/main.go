@@ -265,13 +265,12 @@ func main() {
 					info.GET("/support", infoCtrl.GetSupport)
 					info.GET("/news", infoCtrl.GetNews)
 					info.GET("/tech_work", infoCtrl.GetTechWork)
-
-					info.GET("/:slug", infoCtrl.GetInfo)
 				}
 			}
-			payment := v1.Group("/info/payment")
+			i := v1.Group("/info")
 			{
-				payment.GET("/", infoCtrl.GetPaymentPlans)
+				i.GET("/payment", infoCtrl.GetPaymentPlans)
+				i.GET("/:slug", infoCtrl.GetInfo)
 			}
 		}
 	}

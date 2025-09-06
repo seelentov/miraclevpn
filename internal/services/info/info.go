@@ -67,7 +67,7 @@ func (r *InfoService) GetInfos() ([]*models.Info, error) {
 }
 
 func (r *InfoService) GetSupport() (map[string]string, error) {
-	return r.keyValue.GetLike("%\\_support")
+	return r.keyValue.GetLike("%\\support")
 }
 
 func (r *InfoService) GetPaymentPlans() ([]*models.PaymentPlan, error) {
