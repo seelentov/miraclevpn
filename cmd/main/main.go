@@ -5,6 +5,7 @@ import (
 	"math"
 	authdaemon "miraclevpn/internal/daemon/auth_daemon"
 	"miraclevpn/internal/daemon/healthcheck"
+	serverdaemon "miraclevpn/internal/daemon/server_daemon"
 	vpndaemon "miraclevpn/internal/daemon/vpn_daemon"
 	"miraclevpn/internal/http/middleware"
 	"net/http"
@@ -96,6 +97,13 @@ func main() {
 		log.Fatal("failed get AUTH_FIND_SUSPICIOUS_INTERVAL_SEC: " + err.Error())
 	}
 
+	serverAutoPriorityIntervalStr := os.Getenv("SERVER_AUTO_PRIORITY_INTERVAL_SEC")
+	serverAutoPriorityInterval, err := strconv.Atoi(serverAutoPriorityIntervalStr)
+
+	if err != nil {
+		log.Fatal("failed get SERVER_AUTO_PRIORITY_INTERVAL_SEC: " + err.Error())
+	}
+
 	vpnConfigExpiration, err := strconv.Atoi(vpnConfigExpirationStt)
 	if err != nil {
 		log.Fatal("failed get VPN_CONFIG_DIRATION_SEC: " + err.Error())
@@ -166,7 +174,8 @@ func main() {
 
 	//Демоны
 	vpnRefreshDaemon := vpndaemon.NewVpnRefreshDaemon(time.Second*time.Duration(vpnRefreshConfigInterval), logger.Logger, serversSrv, tgSenderHealthCheck, tgChatIDHealthCheck, time.Second*time.Duration(vpnConfigExpiration))
-	vpnRefreshDaemon.Start()
+	// Остановлен для теста простывания
+	// vpnRefreshDaemon.Start()
 	defer vpnRefreshDaemon.Stop()
 
 	vpnRemoveExpiredDaemon := vpndaemon.NewVpnRemoveExpiredDaemon(time.Second*time.Duration(vpnRemoveExpiredInterval), logger.Logger, serversSrv, tgSenderHealthCheck, tgChatIDHealthCheck)
@@ -176,6 +185,10 @@ func main() {
 	authFindSuspiciosDaemon := authdaemon.NewAuthFindSuspicious(time.Second*time.Duration(authFindSuspiciousInterval), logger.Logger, authDataRepo, tgSenderHealthCheck, tgChatIDHealthCheck)
 	authFindSuspiciosDaemon.Start()
 	defer authFindSuspiciosDaemon.Stop()
+
+	serverAutoPriorityDaemon := serverdaemon.NewServerAutoPriority(time.Second*time.Duration(serverAutoPriorityInterval), logger.Logger, vpnSrv, serverRepo, tgSenderHealthCheck, tgChatIDHealthCheck)
+	serverAutoPriorityDaemon.Start()
+	defer serverAutoPriorityDaemon.Stop()
 
 	//Самомониторинг
 	if !debug {

@@ -112,3 +112,14 @@ func (r *ServerRepository) SendRequest(item string, userID string) error {
 	}
 	return nil
 }
+
+func (r *ServerRepository) UpdatePriority(id int64, priority int) error {
+	s, err := r.FindByID(id)
+	if err != nil {
+		return err
+	}
+
+	s.Priority = priority
+
+	return r.db.Save(s).Error
+}
