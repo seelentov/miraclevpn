@@ -3,10 +3,6 @@ package main
 import (
 	"log"
 	"math"
-	authdaemon "miraclevpn/internal/daemon/auth_daemon"
-	"miraclevpn/internal/daemon/healthcheck"
-	serverdaemon "miraclevpn/internal/daemon/server_daemon"
-	vpndaemon "miraclevpn/internal/daemon/vpn_daemon"
 	"miraclevpn/internal/http/middleware"
 	"net/http"
 	"os"
@@ -75,34 +71,7 @@ func main() {
 		}
 	}
 
-	vpnRefreshConfigIntervalStr := os.Getenv("VPN_REFRESH_INTERVAL_SEC")
 	vpnConfigExpirationStt := os.Getenv("VPN_CONFIG_DIRATION_SEC")
-
-	vpnRefreshConfigInterval, err := strconv.Atoi(vpnRefreshConfigIntervalStr)
-	if err != nil {
-		log.Fatal("failed get VPN_REFRESH_INTERVAL_SEC: " + err.Error())
-	}
-
-	vpnRemoveExpiredIntervalStr := os.Getenv("VPN_REMOVE_EXPIRED_INTERVAL_SEC")
-	vpnRemoveExpiredInterval, err := strconv.Atoi(vpnRemoveExpiredIntervalStr)
-
-	if err != nil {
-		log.Fatal("failed get VPN_REMOVE_EXPIRED_INTERVAL_SEC: " + err.Error())
-	}
-
-	authFindSuspiciousIntervalStr := os.Getenv("AUTH_FIND_SUSPICIOUS_INTERVAL_SEC")
-	authFindSuspiciousInterval, err := strconv.Atoi(authFindSuspiciousIntervalStr)
-
-	if err != nil {
-		log.Fatal("failed get AUTH_FIND_SUSPICIOUS_INTERVAL_SEC: " + err.Error())
-	}
-
-	serverAutoPriorityIntervalStr := os.Getenv("SERVER_AUTO_PRIORITY_INTERVAL_SEC")
-	serverAutoPriorityInterval, err := strconv.Atoi(serverAutoPriorityIntervalStr)
-
-	if err != nil {
-		log.Fatal("failed get SERVER_AUTO_PRIORITY_INTERVAL_SEC: " + err.Error())
-	}
 
 	vpnConfigExpiration, err := strconv.Atoi(vpnConfigExpirationStt)
 	if err != nil {
@@ -171,50 +140,6 @@ func main() {
 	tgTokenHealthCheck := os.Getenv("TG_HEALTHCHECK_TOKEN")
 	tgChatIDHealthCheck := os.Getenv("TG_HEALTHCHECK_CHAT_ID")
 	tgSenderHealthCheck := tg.NewTgClient(tgTokenHealthCheck, "")
-
-	//Демоны
-	vpnRefreshDaemon := vpndaemon.NewVpnRefreshDaemon(time.Second*time.Duration(vpnRefreshConfigInterval), logger.Logger, serversSrv, tgSenderHealthCheck, tgChatIDHealthCheck, time.Second*time.Duration(vpnConfigExpiration))
-	// Остановлен для теста простывания
-	// vpnRefreshDaemon.Start()
-	defer vpnRefreshDaemon.Stop()
-
-	vpnRemoveExpiredDaemon := vpndaemon.NewVpnRemoveExpiredDaemon(time.Second*time.Duration(vpnRemoveExpiredInterval), logger.Logger, serversSrv, tgSenderHealthCheck, tgChatIDHealthCheck)
-	vpnRemoveExpiredDaemon.Start()
-	defer vpnRemoveExpiredDaemon.Stop()
-
-	authFindSuspiciosDaemon := authdaemon.NewAuthFindSuspicious(time.Second*time.Duration(authFindSuspiciousInterval), logger.Logger, authDataRepo, tgSenderHealthCheck, tgChatIDHealthCheck)
-	authFindSuspiciosDaemon.Start()
-	defer authFindSuspiciosDaemon.Stop()
-
-	serverAutoPriorityDaemon := serverdaemon.NewServerAutoPriority(time.Second*time.Duration(serverAutoPriorityInterval), logger.Logger, vpnSrv, serverRepo, tgSenderHealthCheck, tgChatIDHealthCheck)
-	serverAutoPriorityDaemon.Start()
-	defer serverAutoPriorityDaemon.Stop()
-
-	//Самомониторинг
-	if !debug {
-		healthCheckIntervalSec := 60
-		h := os.Getenv("HEALTHCHECK_INTERVAL_SEC")
-		if h != "" {
-			healthCheckIntervalSec, err = strconv.Atoi(h)
-			if err != nil || healthCheckIntervalSec <= 0 {
-				logger.Logger.Error("invalid HEALTHCHECK_INTERVAL_SEC, using default 5 seconds", zap.Error(err))
-			}
-		}
-
-		healthCheckDuration := time.Second * time.Duration(healthCheckIntervalSec)
-
-		dbHealthCheck := healthcheck.NewDBHealthCheck(gormDB, healthCheckDuration, logger.Logger, tgSenderHealthCheck, tgChatIDHealthCheck)
-		dbHealthCheck.Start()
-		defer dbHealthCheck.Stop()
-
-		vpnHealthCheck := healthcheck.NewVpnHealthCheck(healthCheckDuration, logger.Logger, vpnSrv, serverRepo, tgSenderHealthCheck, tgChatIDHealthCheck)
-		vpnHealthCheck.Start()
-		defer vpnHealthCheck.Stop()
-
-		tgHealthCheck := healthcheck.NewTgHealthCheck(healthCheckDuration, logger.Logger, tgSenderHealthCheck, tgChatIDHealthCheck)
-		tgHealthCheck.Start()
-		defer tgHealthCheck.Stop()
-	}
 
 	r := gin.Default()
 

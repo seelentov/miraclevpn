@@ -1,0 +1,14 @@
+[Unit]
+Description=VPN Refresh
+After=network.target
+
+[Service]
+Type=simple
+User=komkov.vv
+WorkingDirectory=/home/komkov.vv/mii_api
+ExecStart=/home/komkov.vv/mii_api/vpn_refresh
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
