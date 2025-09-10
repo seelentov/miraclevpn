@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math"
 	"miraclevpn/internal/config/db"
 	"miraclevpn/internal/config/logg"
 	"miraclevpn/internal/daemon/healthcheck"
@@ -79,4 +80,6 @@ func main() {
 	tgHealthCheck := healthcheck.NewTgHealthCheck(healthCheckDuration, logger.Logger, tgSenderHealthCheck, tgChatIDHealthCheck)
 	tgHealthCheck.Start()
 	defer tgHealthCheck.Stop()
+
+	time.Sleep(math.MaxInt64)
 }

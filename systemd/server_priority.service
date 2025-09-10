@@ -1,12 +1,12 @@
 [Unit]
-Description=API
+Description=MiiVPN - Server Priority
 After=network.target
 
 [Service]
 Type=simple
 User=komkov.vv
 WorkingDirectory=/home/komkov.vv/mii_api
-ExecStart=/home/komkov.vv/mii_api/api
+ExecStart=/home/komkov.vv/mii_api/server_priority
 Restart=on-failure
 RestartSec=5s
 

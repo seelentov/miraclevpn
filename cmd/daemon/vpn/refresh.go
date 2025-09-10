@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math"
 	"miraclevpn/internal/config/db"
 	"miraclevpn/internal/config/logg"
 	vpndaemon "miraclevpn/internal/daemon/vpn_daemon"
@@ -103,4 +104,6 @@ func main() {
 	vpnRemoveExpiredDaemon := vpndaemon.NewVpnRemoveExpiredDaemon(time.Second*time.Duration(vpnRemoveExpiredInterval), logger.Logger, serversSrv, tgSenderHealthCheck, tgChatIDHealthCheck)
 	vpnRemoveExpiredDaemon.Start()
 	defer vpnRemoveExpiredDaemon.Stop()
+
+	time.Sleep(math.MaxInt64)
 }

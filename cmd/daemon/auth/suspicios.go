@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math"
 	"miraclevpn/internal/config/db"
 	"miraclevpn/internal/config/logg"
 	authdaemon "miraclevpn/internal/daemon/auth_daemon"
@@ -59,4 +60,5 @@ func main() {
 	authFindSuspiciosDaemon.Start()
 	defer authFindSuspiciosDaemon.Stop()
 
+	time.Sleep(math.MaxInt64)
 }

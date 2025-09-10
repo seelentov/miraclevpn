@@ -1,5 +1,5 @@
 [Unit]
-Description=VPN Refresh
+Description=MiiVPN - VPN Refresh
 After=network.target
 
 [Service]

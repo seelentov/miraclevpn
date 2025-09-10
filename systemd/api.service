@@ -1,5 +1,5 @@
 [Unit]
-Description=API
+Description=MiiVPN - API
 After=network.target
 
 [Service]

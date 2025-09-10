@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math"
 	"miraclevpn/internal/config/db"
 	"miraclevpn/internal/config/logg"
 	serverdaemon "miraclevpn/internal/daemon/server_daemon"
@@ -66,4 +67,6 @@ func main() {
 	serverAutoPriorityDaemon := serverdaemon.NewServerAutoPriority(time.Second*time.Duration(serverAutoPriorityInterval), logger.Logger, vpnSrv, serverRepo, tgSenderHealthCheck, tgChatIDHealthCheck)
 	serverAutoPriorityDaemon.Start()
 	defer serverAutoPriorityDaemon.Stop()
+
+	time.Sleep(math.MaxInt64)
 }
