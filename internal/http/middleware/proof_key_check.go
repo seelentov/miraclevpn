@@ -25,7 +25,7 @@ func ProofMiddleware(proofKeys map[string]string, banIfFail bool, debug bool) gi
 			if debug {
 				panic("dont have proof: " + ip + " expected " + proofKey + " but got " + proofHeader)
 			} else {
-				panic("dont have proof: " + ip + " expected " + proofKey[:5] + "***" + proofKey[len(proofKey)-5:] + " but got " + proofHeader[:5] + "***" + proofHeader[len(proofHeader)-5:])
+				panic("dont have proof: " + proofHeader + "-" + version)
 			}
 		}
 

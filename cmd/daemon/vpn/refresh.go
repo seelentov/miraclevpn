@@ -30,8 +30,6 @@ func main() {
 	dbPort := os.Getenv("DB_PORT")
 	dbSsl := os.Getenv("DB_SSLMODE")
 	dbTZ := os.Getenv("DB_TIMEZONE")
-	logDir := os.Getenv("LOG_DIR")
-	logRetain, _ := strconv.Atoi(os.Getenv("LOG_RETAIN"))
 	debug := os.Getenv("DEBUG") == "true"
 
 	sshUser := os.Getenv("SSH_USER")
@@ -47,7 +45,7 @@ func main() {
 		log.Fatal("failed get VPN_CONFIG_DIRATION_SEC: " + err.Error())
 	}
 
-	logger, err := logg.NewZapLogger(logDir, logRetain, debug)
+	logger, err := logg.NewZapLogger("", 0, debug)
 	if err != nil {
 		log.Fatal(err)
 	}
