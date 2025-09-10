@@ -168,6 +168,8 @@ func main() {
 		}
 		v1 := api.Group("/v1")
 		{
+			v1.GET("/ping", infoCtrl.GetPing)
+
 			auth := v1.Group("/auth")
 			{
 				auth.POST("/login", authCtrl.PostLogin)
