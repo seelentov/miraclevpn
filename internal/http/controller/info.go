@@ -98,3 +98,7 @@ func (c *InfoController) GetPaymentPlans(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, GetPaymentPlans(i))
 }
+
+func (c *InfoController) GetPing(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, gin.H{"message": "pong"})
+}

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 go build -o bin/monitor cmd/admin/monitor.go &
 go build -o bin/auth_suspicios cmd/daemon/auth/suspicios.go &

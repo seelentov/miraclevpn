@@ -1,12 +1,12 @@
 [Unit]
-Description=API
+Description=MiiVPN - Healthcheck
 After=network.target
 
 [Service]
 Type=simple
 User=komkov.vv
 WorkingDirectory=/home/komkov.vv/mii_api
-ExecStart=/home/komkov.vv/mii_api/api
+ExecStart=/home/komkov.vv/mii_api/healthcheck
 Restart=on-failure
 RestartSec=5s
 
