@@ -1,10 +1,6 @@
 package middleware
 
 import (
-	"fmt"
-	"os/exec"
-	"strings"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,10 +11,10 @@ func ProofMiddleware(proofKeys map[string]string, banIfFail bool, debug bool) gi
 		proofKey := proofKeys[version]
 
 		if proofHeader == "" || version == "" || proofKey != proofHeader {
-			ip := ctx.ClientIP()
+			ip := ctx.GetHeader("X-Real-Ip")
 
 			if banIfFail {
-				if err := banIPWithFail2ban(ip); err != nil {
+				if err := BanIPWithFail2ban(ip); err != nil {
 					panic(err)
 				}
 			}
@@ -31,20 +27,4 @@ func ProofMiddleware(proofKeys map[string]string, banIfFail bool, debug bool) gi
 
 		ctx.Next()
 	}
-}
-
-func banIPWithFail2ban(ip string) error {
-	if ip == "" || strings.Contains(ip, " ") {
-		return fmt.Errorf("invalid IP address: %s", ip)
-	}
-
-	cmd := exec.Command("sudo", "fail2ban-client", "set", "nginx-badrequests", "banip", ip)
-
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("fail2ban command failed: %v, output: %s", err, string(output))
-	}
-
-	fmt.Printf("Successfully banned IP %s: %s\n", ip, string(output))
-	return nil
 }

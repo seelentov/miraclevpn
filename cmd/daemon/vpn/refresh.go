@@ -103,4 +103,6 @@ func main() {
 	vpnRemoveExpiredDaemon := vpndaemon.NewVpnRemoveExpiredDaemon(time.Second*time.Duration(vpnRemoveExpiredInterval), logger.Logger, serversSrv, tgSenderHealthCheck, tgChatIDHealthCheck)
 	vpnRemoveExpiredDaemon.Start()
 	defer vpnRemoveExpiredDaemon.Stop()
+
+	select {}
 }

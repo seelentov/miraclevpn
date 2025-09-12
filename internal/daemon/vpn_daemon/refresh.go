@@ -52,8 +52,6 @@ func (d *VpnRefreshDaemon) Start() {
 					er := utils.GetStackTrace(err)
 					d.sender.SendMessage(d.adminTo, fmt.Sprintf("VPN refresh daemon failed: %v", er))
 					d.logger.Error("VPN refresh daemon failed", zap.String("error", er))
-				} else {
-					d.logger.Debug("VPN refresh daemon passed")
 				}
 			case <-d.stopChan:
 				d.logger.Info("Stopping VPN refresh daemon")

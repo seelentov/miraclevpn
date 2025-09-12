@@ -84,8 +84,6 @@ func (d *VpnHealthCheck) do() {
 					d.logger.Error("ADMIN TG SEND FAILED", zap.Error(err))
 				}
 				d.logger.Error("VPN health check failed", zap.String("host", srv.Host), zap.String("error", er))
-			} else {
-				d.logger.Info("VPN health check passed", zap.String("host", srv.Host))
 			}
 
 			tenPersentUsers := srv.MaxUsers - (srv.MaxUsers / 10)

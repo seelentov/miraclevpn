@@ -48,8 +48,6 @@ func (d *VpnRemoveExpiredDaemon) Start() {
 					er := utils.GetStackTrace(err)
 					d.sender.SendMessage(d.adminTo, fmt.Sprintf("VPN remove expired daemon failed: %v", er))
 					d.logger.Error("VPN remove expired daemon failed", zap.String("error", er))
-				} else {
-					d.logger.Debug("VPN remove expired daemon passed")
 				}
 			case <-d.stopChan:
 				d.logger.Info("Stopping VPN remove expired daemon")

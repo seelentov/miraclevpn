@@ -28,8 +28,6 @@ func main() {
 	dbPort := os.Getenv("DB_PORT")
 	dbSsl := os.Getenv("DB_SSLMODE")
 	dbTZ := os.Getenv("DB_TIMEZONE")
-	logDir := os.Getenv("LOG_DIR")
-	logRetain, _ := strconv.Atoi(os.Getenv("LOG_RETAIN"))
 	debug := os.Getenv("DEBUG") == "true"
 
 	tgTokenHealthCheck := os.Getenv("TG_HEALTHCHECK_TOKEN")
@@ -49,7 +47,7 @@ func main() {
 		log.Fatal("failed get SERVER_AUTO_PRIORITY_INTERVAL_SEC: " + err.Error())
 	}
 
-	logger, err := logg.NewZapLogger(logDir, logRetain, debug)
+	logger, err := logg.NewZapLogger("", 0, debug)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -66,4 +64,6 @@ func main() {
 	serverAutoPriorityDaemon := serverdaemon.NewServerAutoPriority(time.Second*time.Duration(serverAutoPriorityInterval), logger.Logger, vpnSrv, serverRepo, tgSenderHealthCheck, tgChatIDHealthCheck)
 	serverAutoPriorityDaemon.Start()
 	defer serverAutoPriorityDaemon.Stop()
+
+	select {}
 }

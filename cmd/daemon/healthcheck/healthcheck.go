@@ -28,8 +28,6 @@ func main() {
 	dbPort := os.Getenv("DB_PORT")
 	dbSsl := os.Getenv("DB_SSLMODE")
 	dbTZ := os.Getenv("DB_TIMEZONE")
-	logDir := os.Getenv("LOG_DIR")
-	logRetain, _ := strconv.Atoi(os.Getenv("LOG_RETAIN"))
 	debug := os.Getenv("DEBUG") == "true"
 
 	tgTokenHealthCheck := os.Getenv("TG_HEALTHCHECK_TOKEN")
@@ -42,7 +40,7 @@ func main() {
 	sshRevokeUserFile := os.Getenv("SSH_REVOKE_USER_FILE")
 	sshConfigsDir := os.Getenv("SSH_CONFIGS_DIR")
 
-	logger, err := logg.NewZapLogger(logDir, logRetain, debug)
+	logger, err := logg.NewZapLogger("", 0, debug)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -79,4 +77,6 @@ func main() {
 	tgHealthCheck := healthcheck.NewTgHealthCheck(healthCheckDuration, logger.Logger, tgSenderHealthCheck, tgChatIDHealthCheck)
 	tgHealthCheck.Start()
 	defer tgHealthCheck.Stop()
+
+	select {}
 }

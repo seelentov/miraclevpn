@@ -58,8 +58,6 @@ func (d *DBHealthCheck) Start() {
 						d.logger.Error("ADMIN TG SEND FAILED", zap.Error(err))
 					}
 					d.logger.Error("Database health check failed", zap.String("error", er))
-				} else {
-					d.logger.Debug("Database health check passed")
 				}
 			case <-d.stopChan:
 				d.logger.Info("Stopping database health check")
