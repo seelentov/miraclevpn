@@ -63,8 +63,6 @@ func (d *AuthFindSuspicious) Start() {
 					if err != nil {
 						d.logger.Error("ADMIN TG SEND FAILED", zap.Error(err))
 					}
-				} else {
-					d.logger.Debug("Auth find suspicios passed: nil")
 				}
 			case <-d.stopChan:
 				d.logger.Info("Stopping Auth find suspicios")

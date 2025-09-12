@@ -60,9 +60,6 @@ func (d *ServerAutoPriority) Start() {
 						d.logger.Error("ADMIN TG SEND FAILED", zap.Error(err))
 					}
 					d.logger.Error("Server auto-priority failed", zap.Error(err))
-				} else {
-					d.logger.Info("Server auto-priority passed")
-
 				}
 			case <-d.stopChan:
 				d.logger.Info("Stopping server auto-priority")
