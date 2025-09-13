@@ -60,7 +60,7 @@ func main() {
 	if h != "" {
 		healthCheckIntervalSec, err = strconv.Atoi(h)
 		if err != nil || healthCheckIntervalSec <= 0 {
-			logger.Logger.Error("invalid HEALTHCHECK_INTERVAL_SEC, using default 5 seconds", zap.Error(err))
+			logger.Logger.Error("invalid HEALTHCHECK_INTERVAL_SEC, using default 60 seconds", zap.Error(err))
 		}
 	}
 
