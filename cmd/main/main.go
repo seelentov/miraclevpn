@@ -52,8 +52,6 @@ func main() {
 	sshRevokeUserFile := os.Getenv("SSH_REVOKE_USER_FILE")
 	sshConfigsDir := os.Getenv("SSH_CONFIGS_DIR")
 
-	badPathString := os.Getenv("BAD_PATHS_LIST")
-
 	proofKey := os.Getenv("MII_VPN_PROOF")
 	proofBanIfFail := os.Getenv("PROOF_BAN_IF_FAIL") == "true"
 	proofKeys := make(map[string]string)
@@ -215,31 +213,6 @@ func main() {
 				i.GET("/:slug", infoCtrl.GetInfo)
 			}
 		}
-	}
-
-	badPaths := make([]string, 0)
-	if badPathString != "" {
-		badPathsEnv := strings.Split(badPathString, "|")
-		routes := r.Routes()
-		for _, badPath := range badPathsEnv {
-			skip := false
-
-			for _, endPoint := range routes {
-				if strings.Contains(endPoint.Path, badPath) {
-					logger.Logger.Warn("Ignore bad path: " + badPath + " because endpoint " + endPoint.Path)
-					skip = true
-					break
-				}
-			}
-
-			if !skip {
-				badPaths = append(badPaths, badPath)
-			}
-		}
-	}
-
-	if len(badPaths) > 0 {
-		r.Use(middleware.BadRequestsMiddleware(proofBanIfFail, logger.Logger, badPaths))
 	}
 
 	r.Run(":" + os.Getenv("PORT"))
