@@ -37,6 +37,7 @@ func main() {
 	vpnSrv := ovpn.NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile, sshConfigsDir)
 
 	serverRepo := repo.NewServerRepository(gormDB)
+	usRepo := repo.NewUserServerRepository(gormDB)
 
 	srvs, err := serverRepo.FindAll()
 	if err != nil {
@@ -51,7 +52,13 @@ func main() {
 			} else {
 				fmt.Println(s.Host, len(status.Clients))
 				for _, c := range status.Clients {
-					fmt.Printf("CommonName:%s,RealAddress:%s,BytesReceived:%d,BytesSent:%d,ConnectedSince:%s\n", c.CommonName, c.RealAddress, c.BytesReceived, c.BytesSent, c.ConnectedSince)
+					us, err := usRepo.FindByConfigFile(c.CommonName)
+
+					if err != nil || us.UserID == "" {
+						us.UserID = "nil"
+					}
+
+					fmt.Printf("CommonName:%s,UserID:%s,RealAddress:%s,BytesReceived:%d,BytesSent:%d,ConnectedSince:%s\n", c.CommonName, us.UserID, c.RealAddress, c.BytesReceived, c.BytesSent, c.ConnectedSince)
 				}
 			}
 

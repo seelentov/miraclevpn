@@ -77,3 +77,11 @@ func (r *UserServerRepository) RemoveExpiredByUser() error {
 
 	return nil
 }
+
+func (r *UserServerRepository) FindByConfigFile(configFile string) (*models.UserServer, error) {
+	var us *models.UserServer
+	if err := r.db.Where("config_file = ? OR config_file_expired = ?", configFile, configFile).Find(&us).Error; err != nil {
+		return nil, err
+	}
+	return us, nil
+}
