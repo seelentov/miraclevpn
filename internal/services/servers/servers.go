@@ -218,7 +218,33 @@ func (s *ServersService) UpdateExpired(expiration time.Duration) error {
 }
 
 func (s *ServersService) RemoveExpiredByUser() error {
-	return s.ursSrvRepo.RemoveExpiredByUser()
+	expired, err := s.ursSrvRepo.FindExpiredByUser()
+	if err != nil {
+		return err
+	}
+
+	if err := s.ursSrvRepo.Delete(expired); err != nil {
+		return err
+	}
+
+	for _, e := range expired {
+		ser, err := s.srvRepo.FindByID(e.ServerID)
+		if err != nil {
+			return err
+		}
+
+		if err := s.vpnService.DeleteUser(ser.Host, e.ConfigFile); err != nil {
+			return err
+		}
+
+		if e.ConfigFileExpired != nil {
+			if err := s.vpnService.DeleteUser(ser.Host, *(e.ConfigFileExpired)); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }
 
 func (s *ServersService) FindPreview() ([]*models.Server, error) {
