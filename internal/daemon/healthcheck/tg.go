@@ -31,7 +31,7 @@ func NewTgHealthCheck(duration time.Duration, logger *zap.Logger, sender sender.
 func (d *TgHealthCheck) Start() {
 	ticker := time.NewTicker(d.duration)
 
-	d.logger.Info("Starting VPN health check",
+	d.logger.Info("Starting TG health check",
 		zap.Duration("interval", d.duration))
 
 	go func() {
@@ -40,7 +40,7 @@ func (d *TgHealthCheck) Start() {
 			case <-ticker.C:
 				d.do()
 			case <-d.stopChan:
-				d.logger.Info("Stopping VPN health check")
+				d.logger.Info("Stopping TG health check")
 				return
 			}
 		}

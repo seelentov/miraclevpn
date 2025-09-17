@@ -46,7 +46,7 @@ func NewServerAutoPriority(duration time.Duration, logger *zap.Logger, vpnClient
 func (d *ServerAutoPriority) Start() {
 	ticker := time.NewTicker(d.duration)
 
-	d.logger.Info("Starting server auto-priority",
+	d.logger.Info("Starting",
 		zap.Duration("interval", d.duration))
 
 	go func() {
@@ -55,14 +55,14 @@ func (d *ServerAutoPriority) Start() {
 			case <-ticker.C:
 				if err := d.do(); err != nil {
 					er := utils.GetStackTrace(err)
-					err := d.sender.SendMessage(d.adminTo, fmt.Sprintf("Database health check failed: %v", er))
+					err := d.sender.SendMessage(d.adminTo, fmt.Sprintf("failed: %v", er))
 					if err != nil {
 						d.logger.Error("ADMIN TG SEND FAILED", zap.Error(err))
 					}
-					d.logger.Error("Server auto-priority failed", zap.Error(err))
+					d.logger.Error("failed", zap.Error(err))
 				}
 			case <-d.stopChan:
-				d.logger.Info("Stopping server auto-priority")
+				d.logger.Info("Stopping")
 				return
 			}
 		}
