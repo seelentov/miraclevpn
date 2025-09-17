@@ -25,7 +25,7 @@ func NewPaymentService(client PaymentClient, payRepo *repo.PaymentRepository, pa
 
 func (s *PaymentService) Create(uID, email string, plan *models.PaymentPlan, getReceipt bool) (payURL string, err error) {
 	yooKassaID, payURL, err := s.client.CreatePayment(email, plan.PayDesc, []*PaymentItem{{
-		Name:     plan.Desc,
+		Name:     plan.PayDesc,
 		Quantity: 1,
 		Value:    plan.Price,
 		Currency: plan.Currency,
