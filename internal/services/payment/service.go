@@ -44,8 +44,8 @@ func (s *PaymentService) Find(yooKassaID string) (*models.Payment, error) {
 	return s.payRepo.FindByYooKassaID(yooKassaID)
 }
 
-func (s *PaymentService) Delete(yooKassaID string) error {
-	return s.payRepo.Delete(yooKassaID)
+func (s *PaymentService) Done(yooKassaID string) error {
+	return s.payRepo.Done(yooKassaID)
 }
 
 func (s *PaymentService) FindPlanByID(planID int64) (*models.PaymentPlan, error) {

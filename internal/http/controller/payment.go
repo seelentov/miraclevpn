@@ -69,7 +69,7 @@ func (c *PaymentController) PostPaymentHook(ctx *gin.Context) {
 		panic(err)
 	}
 
-	if err := c.payService.Delete(payment.YooKassaID); err != nil {
+	if err := c.payService.Done(payment.YooKassaID); err != nil {
 		panic(err)
 	}
 

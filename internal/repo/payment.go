@@ -31,6 +31,7 @@ func (r *PaymentRepository) Create(uID string, yooKassaID string, days int) erro
 		UserID:     uID,
 		YooKassaID: yooKassaID,
 		Days:       days,
+		Done:       false,
 	}
 
 	if err := r.db.Save(&p).Error; err != nil {
@@ -40,8 +41,15 @@ func (r *PaymentRepository) Create(uID string, yooKassaID string, days int) erro
 	return nil
 }
 
-func (r *PaymentRepository) Delete(yooKassaID string) error {
-	return r.db.Where("yoo_kassa_id = ?", yooKassaID).Delete(&models.Payment{}).Error
+func (r *PaymentRepository) Done(yooKassaID string) error {
+	p, err := r.FindByYooKassaID(yooKassaID)
+	if err != nil {
+		return err
+	}
+
+	p.Done = true
+
+	return r.db.Save(p).Error
 }
 
 func (r *PaymentRepository) DeleteExpired() error {
