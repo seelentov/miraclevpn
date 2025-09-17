@@ -1,10 +1,10 @@
 package controller
 
 import (
-	"errors"
 	"miraclevpn/internal/models"
 	"miraclevpn/internal/services/info"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -50,16 +50,11 @@ type GetInfoRes *models.Info
 func (c *InfoController) GetInfo(ctx *gin.Context) {
 	slug := ctx.Param("slug")
 	if slug == "" {
-		ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "slug не указан"})
-		return
+		panic("slug is empty")
 	}
 
 	i, err := c.srv.GetInfo(slug)
 	if err != nil {
-		if errors.Is(err, info.ErrNotFound) {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": "информация не найдена"})
-			return
-		}
 		panic(err)
 	}
 
@@ -88,7 +83,7 @@ func (c *InfoController) GetSupport(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, GetSupportRes(i))
 }
 
-type GetPaymentPlans []*models.PaymentPlan
+type GetPaymentPlansRes []*models.PaymentPlan
 
 func (c *InfoController) GetPaymentPlans(ctx *gin.Context) {
 	i, err := c.srv.GetPaymentPlans()
@@ -96,7 +91,28 @@ func (c *InfoController) GetPaymentPlans(ctx *gin.Context) {
 		panic(err)
 	}
 
-	ctx.JSON(http.StatusOK, GetPaymentPlans(i))
+	ctx.JSON(http.StatusOK, GetPaymentPlansRes(i))
+}
+
+type GetPaymentPlanRes *models.PaymentPlan
+
+func (c *InfoController) GetPaymentPlan(ctx *gin.Context) {
+	planIDStr := ctx.Param("plan_id")
+	if planIDStr == "" {
+		panic("plan_id is empty")
+	}
+
+	planID, err := strconv.Atoi(planIDStr)
+	if err != nil {
+		panic(err)
+	}
+
+	i, err := c.srv.GetPaymentPlan(int64(planID))
+	if err != nil {
+		panic(err)
+	}
+
+	ctx.JSON(http.StatusOK, GetPaymentPlanRes(i))
 }
 
 func (c *InfoController) GetPing(ctx *gin.Context) {

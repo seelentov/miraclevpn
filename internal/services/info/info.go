@@ -73,3 +73,7 @@ func (r *InfoService) GetSupport() (map[string]string, error) {
 func (r *InfoService) GetPaymentPlans() ([]*models.PaymentPlan, error) {
 	return r.payPlRepo.FindAll()
 }
+
+func (r *InfoService) GetPaymentPlan(planID int64) (*models.PaymentPlan, error) {
+	return r.payPlRepo.FindByID(planID)
+}

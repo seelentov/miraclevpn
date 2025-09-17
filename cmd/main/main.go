@@ -227,6 +227,7 @@ func main() {
 			i := v1.Group("/info")
 			{
 				i.GET("/payment", infoCtrl.GetPaymentPlans)
+				i.GET("/payment/:plan_id", infoCtrl.GetPaymentPlan)
 				i.GET("/:slug", infoCtrl.GetInfo)
 			}
 		}
