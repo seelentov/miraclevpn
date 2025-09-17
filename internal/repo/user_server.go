@@ -53,14 +53,7 @@ func (r *UserServerRepository) FindExpired(expiration time.Duration) ([]*models.
 
 func (r *UserServerRepository) FindExpiredByUser() ([]*models.UserServer, error) {
 	var us []*models.UserServer
-	if err := r.db.Where("updated_at < ?", time.Now()).Find(&us).Error; err != nil {
-		return nil, err
-	}
 
-	return us, nil
-}
-
-func (r *UserServerRepository) RemoveExpiredByUser() error {
 	expiredUserIDs := r.db.
 		Table("users").
 		Select("id").
@@ -68,14 +61,13 @@ func (r *UserServerRepository) RemoveExpiredByUser() error {
 
 	result := r.db.
 		Table("user_servers").
-		Where("user_id IN (?)", expiredUserIDs).
-		Delete(&models.UserServer{})
+		Where("user_id IN (?)", expiredUserIDs).Find(&us)
 
-	if result.Error != nil {
-		return result.Error
-	}
+	return us, result.Error
+}
 
-	return nil
+func (r *UserServerRepository) Delete(uss []*models.UserServer) error {
+	return r.db.Delete(uss).Error
 }
 
 func (r *UserServerRepository) FindByConfigFile(configFile string) (*models.UserServer, error) {
