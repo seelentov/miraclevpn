@@ -12,7 +12,7 @@ type PaymentRepository struct {
 	expiration time.Duration
 }
 
-func NewPaymentRepository(db *gorm.DB) *PaymentRepository {
+func NewPaymentRepository(db *gorm.DB, expiration time.Duration) *PaymentRepository {
 	return &PaymentRepository{
 		db: db,
 	}
@@ -41,7 +41,7 @@ func (r *PaymentRepository) Create(uID string, yooKassaID string, days int) erro
 }
 
 func (r *PaymentRepository) Delete(yooKassaID string) error {
-	return r.db.Where("yoo_kassa_id = ? and created_at > ?", yooKassaID, time.Now().Add(r.expiration*-1)).Delete(&models.Payment{}).Error
+	return r.db.Where("yoo_kassa_id = ?", yooKassaID).Delete(&models.Payment{}).Error
 }
 
 func (r *PaymentRepository) DeleteExpired() error {

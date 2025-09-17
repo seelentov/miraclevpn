@@ -43,9 +43,9 @@ func (r *UserRepository) Create(uID string) (*models.User, error) {
 	return &u, nil
 }
 
-func (r *UserRepository) AddSubDays(userID int64, days int) error {
+func (r *UserRepository) AddSubDays(userID string, days int) error {
 	var u models.User
-	if err := r.db.Find(&u, userID).Error; err != nil {
+	if err := r.db.Where("id = ? AND active = ?", userID, true).First(&u).Error; err != nil {
 		return err
 	}
 

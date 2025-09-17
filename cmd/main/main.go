@@ -4,7 +4,6 @@ import (
 	"log"
 	"math"
 	"miraclevpn/internal/http/middleware"
-	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -17,10 +16,12 @@ import (
 	"miraclevpn/internal/services/auth"
 	"miraclevpn/internal/services/crypt"
 	"miraclevpn/internal/services/info"
+	"miraclevpn/internal/services/payment"
 	"miraclevpn/internal/services/servers"
 	"miraclevpn/internal/services/user"
 	"miraclevpn/pkg/ovpn"
 	"miraclevpn/pkg/tg"
+	"miraclevpn/pkg/yookassa"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -88,6 +89,13 @@ func main() {
 		jwtDuration, _ = strconv.Atoi(os.Getenv("JWT_DURATION_MIN"))
 	}
 
+	paymentExpirationStr := os.Getenv("PAYMENT_EXPIRATION_SEC")
+	paymentExpiration, err := strconv.Atoi(paymentExpirationStr)
+
+	if err != nil {
+		log.Fatal("failed get PAYMENT_EXPIRATION_SEC: " + err.Error())
+	}
+
 	// Инициализация логгера
 	logger, err := logg.NewZapLogger(logDir, logRetain, debug)
 	if err != nil {
@@ -120,21 +128,27 @@ func main() {
 	keyValueRepo := repo.NewKeyValueRepository(gormDB)
 	payPlRepo := repo.NewPaymentPlanRepository(gormDB)
 	authDataRepo := repo.NewAuthDataRepository(gormDB)
+	payRepo := repo.NewPaymentRepository(gormDB, time.Second*time.Duration(paymentExpiration))
 
 	// VPN
 	vpnSrv := ovpn.NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile, sshConfigsDir)
+
+	// Платежный шлюз
+	paymentClient := yookassa.NewClient(os.Getenv("PAYMENT_SHOP_ID"), os.Getenv("PAYMENT_SECRET"), os.Getenv("PAYMENT_RETURN_URL"))
 
 	// Сервисы
 	authSrv := auth.NewAuthService(userRepo, authDataRepo, jwtSrv, time.Duration(jwtDuration)*time.Minute, logger.Logger)
 	userSrv := user.NewUserService(userRepo, logger.Logger)
 	serversSrv := servers.NewServersService(userServerRepo, serverRepo, userRepo, vpnSrv, logger.Logger)
 	infoSrv := info.NewInfoService(newsRepo, infoRepo, keyValueRepo, payPlRepo)
+	paySrv := payment.NewPaymentService(paymentClient, payRepo, payPlRepo, logger.Logger)
 
 	// Контроллеры
 	authCtrl := controller.NewAuthController(authSrv, jwtSrv, jwtDuration)
 	userCtrl := controller.NewUserController(userSrv)
 	serverCtrl := controller.NewServerController(serversSrv, vpnConfigExpiration)
 	infoCtrl := controller.NewInfoController(infoSrv)
+	payCtrl := controller.NewPaymentController(paySrv, userSrv)
 
 	//Админ TG
 	tgTokenHealthCheck := os.Getenv("TG_HEALTHCHECK_TOKEN")
@@ -151,24 +165,27 @@ func main() {
 
 	r.Static("/storage", "./storage")
 
-	r.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "pong"})
-	})
-
+	r.Use(middleware.Recovery(debug, tgSenderHealthCheck, tgChatIDHealthCheck, logger.Logger))
 	r.NoRoute(middleware.NotFound())
 
 	api := r.Group("/api")
 	{
-		api.Use(middleware.Recovery(debug, tgSenderHealthCheck, tgChatIDHealthCheck, logger.Logger))
-		api.Use(middleware.SetUserIDMiddleware(jwtSrv))
+		api.GET("/ping", infoCtrl.GetPing)
 
-		if len(proofKeys) > 0 {
-			log.Println("PROOF ACTIVATED")
-			api.Use(middleware.ProofMiddleware(proofKeys, proofBanIfFail, debug))
-		}
 		v1 := api.Group("/v1")
 		{
-			v1.GET("/ping", infoCtrl.GetPing)
+			v1.Use(middleware.SetUserIDMiddleware(jwtSrv))
+
+			payment := v1.Group("/payment")
+			{
+				payment.POST("/hook", payCtrl.PostPaymentHook)
+				payment.POST("/create", payCtrl.PostCreate)
+			}
+
+			if len(proofKeys) > 0 {
+				log.Println("PROOF ACTIVATED")
+				v1.Use(middleware.ProofMiddleware(proofKeys, proofBanIfFail, debug))
+			}
 
 			auth := v1.Group("/auth")
 			{

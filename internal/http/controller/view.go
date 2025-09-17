@@ -6,8 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ViewController struct {
-}
+type ViewController struct{}
 
 func NewViewController() *ViewController {
 	return &ViewController{}
@@ -23,5 +22,4 @@ func (c *ViewController) NotFound(ctx *gin.Context) {
 
 func (c *ViewController) Panic(ctx *gin.Context, err interface{}) {
 	ctx.HTML(http.StatusInternalServerError, "500.html", nil)
-
 }

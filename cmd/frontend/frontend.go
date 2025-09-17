@@ -14,7 +14,6 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal(err)
 	}
-
 	viewCtrl := controller.NewViewController()
 
 	r := gin.Default()

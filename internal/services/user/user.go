@@ -47,3 +47,11 @@ func (s *UserService) GetUserByID(id string) (*models.User, error) {
 	s.logger.Debug("user fetched", zap.String("user_id", id))
 	return u, nil
 }
+
+func (s *UserService) AddDays(id string, days int) error {
+	s.logger.Debug("add days", zap.String("user_id", id), zap.Int("days", days))
+	if err := s.userRepo.AddSubDays(id, days); err != nil {
+		return err
+	}
+	return nil
+}
