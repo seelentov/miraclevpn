@@ -49,6 +49,10 @@ func (r *UserRepository) AddSubDays(userID string, days int) error {
 		return err
 	}
 
+	if u.ExpiredAt.Before(time.Now()) {
+		u.ExpiredAt = time.Now()
+	}
+
 	u.ExpiredAt = u.ExpiredAt.Add(time.Duration(days) * time.Hour * 24)
 	u.Trial = false
 
