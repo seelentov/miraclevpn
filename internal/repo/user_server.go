@@ -23,7 +23,13 @@ func (r *UserServerRepository) FindByUserIDServerID(userID string, serverID int6
 		return nil, err
 	}
 
+	userServer.UpdatedAt = time.Now()
+	if err := r.db.Save(&userServer).Error; err != nil {
+		return nil, err
+	}
+
 	userServer.ConfigFile = ""
+	userServer.ConfigFileExpired = nil
 
 	return &userServer, nil
 }
@@ -35,6 +41,7 @@ func (r *UserServerRepository) CreateOrUpdate(userID string, serverID int64, con
 		Config:            config,
 		ConfigFile:        configFile,
 		ConfigFileExpired: configFileExpired,
+		UpdatedAt:         time.Now(),
 	}
 	if err := r.db.Save(&userServer).Error; err != nil {
 		return err
