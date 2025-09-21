@@ -27,6 +27,9 @@ import (
 	"github.com/joho/godotenv"
 
 	"go.uber.org/zap"
+
+	"net/http"
+	_ "net/http/pprof"
 )
 
 func main() {
@@ -34,7 +37,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Получение параметров из .env
+	if os.Getenv("PPROF_PORT") != "" {
+		go func() {
+			log.Println(http.ListenAndServe("localhost:"+os.Getenv("PPROF_PORT"), nil))
+		}()
+	}
+
 	dbUser := os.Getenv("DB_USER")
 	dbHost := os.Getenv("DB_HOST")
 	dbPass := os.Getenv("DB_PASSWORD")
@@ -96,19 +104,16 @@ func main() {
 		log.Fatal("failed get PAYMENT_EXPIRATION_SEC: " + err.Error())
 	}
 
-	// Инициализация логгера
 	logger, err := logg.NewZapLogger(logDir, logRetain, debug)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Подключение к БД PostgreSQL
 	gormDB, err := db.NewPostgreConn(dbHost, dbUser, dbPass, dbName, dbPort, dbSsl, dbTZ)
 	if err != nil {
 		logger.Logger.Fatal("failed to connect to db", zap.Error(err))
 	}
 
-	// Криптосервисы
 	argonParams := &crypt.Argon2idParams{
 		Memory:      64 * 1024,
 		Iterations:  3,
@@ -119,7 +124,6 @@ func main() {
 	argonSrv := crypt.NewArgonService(argonParams, logger.Logger)
 	jwtSrv := crypt.NewJwtService(jwtSecret, logger.Logger)
 
-	// Репозитории
 	userRepo := repo.NewUserRepository(gormDB, argonSrv, time.Duration(freeTrial)*time.Second)
 	serverRepo := repo.NewServerRepository(gormDB)
 	userServerRepo := repo.NewUserServerRepository(gormDB)
@@ -130,27 +134,22 @@ func main() {
 	authDataRepo := repo.NewAuthDataRepository(gormDB)
 	payRepo := repo.NewPaymentRepository(gormDB, time.Second*time.Duration(paymentExpiration))
 
-	// VPN
 	vpnSrv := ovpn.NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile, sshConfigsDir)
 
-	// Платежный шлюз
 	paymentClient := yookassa.NewClient(os.Getenv("PAYMENT_SHOP_ID"), os.Getenv("PAYMENT_SECRET"), os.Getenv("PAYMENT_RETURN_URL"))
 
-	// Сервисы
 	authSrv := auth.NewAuthService(userRepo, authDataRepo, jwtSrv, time.Duration(jwtDuration)*time.Minute, logger.Logger)
 	userSrv := user.NewUserService(userRepo, logger.Logger)
 	serversSrv := servers.NewServersService(userServerRepo, serverRepo, userRepo, vpnSrv, logger.Logger)
 	infoSrv := info.NewInfoService(newsRepo, infoRepo, keyValueRepo, payPlRepo)
 	paySrv := payment.NewPaymentService(paymentClient, payRepo, payPlRepo, logger.Logger)
 
-	// Контроллеры
 	authCtrl := controller.NewAuthController(authSrv, jwtSrv, jwtDuration)
 	userCtrl := controller.NewUserController(userSrv)
 	serverCtrl := controller.NewServerController(serversSrv, vpnConfigExpiration)
 	infoCtrl := controller.NewInfoController(infoSrv)
 	payCtrl := controller.NewPaymentController(paySrv, userSrv)
 
-	//Админ TG
 	tgTokenHealthCheck := os.Getenv("TG_HEALTHCHECK_TOKEN")
 	tgChatIDHealthCheck := os.Getenv("TG_HEALTHCHECK_CHAT_ID")
 	tgSenderHealthCheck := tg.NewTgClient(tgTokenHealthCheck, "")
