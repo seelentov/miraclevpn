@@ -17,3 +17,6 @@ api
 main
 
 bin/*
+
+vendor/
+
