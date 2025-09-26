@@ -32,7 +32,7 @@ func RequireAuthMiddleware(userRepo *repo.UserRepository) gin.HandlerFunc {
 			return
 		}
 
-		if u.Active {
+		if !u.Active {
 			ctx.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "Аккаунт деактивирован"})
 			return
 		}
