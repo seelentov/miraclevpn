@@ -1,7 +1,9 @@
 // Package payment provides payment logic
 package payment
 
-import "miraclevpn/internal/models"
+import (
+	"miraclevpn/internal/models"
+)
 
 type PaymentItem struct {
 	Name     string
@@ -12,5 +14,5 @@ type PaymentItem struct {
 }
 
 type PaymentClient interface {
-	CreatePayment(email string, description string, items []*PaymentItem, paymentToken string, getReceipt bool, paymentMethodID string) (ID string, paymentURL string, err error)
+	CreatePayment(email string, description string, items []*PaymentItem, getReceipt bool, paymentMethodID string, meta map[string]string) (ID string, paymentURL string, err error)
 }

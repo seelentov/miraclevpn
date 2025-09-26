@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/sender"
-	"miraclevpn/internal/utils"
 	"time"
 
 	"go.uber.org/zap"
@@ -45,9 +44,7 @@ func (d *PaymentRemoveExpired) Start() {
 			select {
 			case <-ticker.C:
 				if err := d.do(); err != nil {
-					er := utils.GetStackTrace(err)
-					err := d.sender.SendMessage(d.adminTo, fmt.Sprintf("failed: %v", er))
-					if err != nil {
+					if err := d.sender.SendMessage(d.adminTo, fmt.Sprintf("failed: %v", err)); err != nil {
 						d.logger.Error("ADMIN TG SEND FAILED", zap.Error(err))
 					}
 					d.logger.Error("failed", zap.Error(err))

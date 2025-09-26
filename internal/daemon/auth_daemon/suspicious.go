@@ -7,7 +7,6 @@ import (
 	"miraclevpn/internal/models"
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/sender"
-	"miraclevpn/internal/utils"
 	"time"
 
 	"go.uber.org/zap"
@@ -49,12 +48,11 @@ func (d *AuthFindSuspicious) Start() {
 			case <-ticker.C:
 				auths, err := d.do()
 				if err != nil {
-					er := utils.GetStackTrace(err)
-					err := d.sender.SendMessage(d.adminTo, fmt.Sprintf("Auth find suspicios failed: %v", er))
+					err := d.sender.SendMessage(d.adminTo, fmt.Sprintf("Auth find suspicios failed: %v", err))
 					if err != nil {
 						d.logger.Error("ADMIN TG SEND FAILED", zap.Error(err))
 					}
-					d.logger.Error("Auth find suspicios failed", zap.String("error", er))
+					d.logger.Error("Auth find suspicios failed", zap.Error(err))
 				} else if len(auths) > 0 {
 					d.logger.Info("FIND SUSPICIOUS AUTHS", zap.Any("list", auths))
 					authsS, _ := json.Marshal(auths)

@@ -47,9 +47,13 @@ func (s *PaymentService) Create(uID, email string, plan *models.PaymentPlan, get
 		Currency: plan.Currency,
 		Vat:      plan.VatCode,
 	}},
-		token,
 		getReceipt,
 		"",
+		map[string]string{
+			"token":   token,
+			"user_id": uID,
+			"email":   uID,
+		},
 	)
 	if err != nil {
 		s.logger.Error("failed to create payment", zap.String("user_id", uID), zap.Error(err))

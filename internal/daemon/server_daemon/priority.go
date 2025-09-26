@@ -5,7 +5,6 @@ import (
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/sender"
 	"miraclevpn/internal/services/vpn"
-	"miraclevpn/internal/utils"
 	"sort"
 	"time"
 
@@ -54,9 +53,7 @@ func (d *ServerAutoPriority) Start() {
 			select {
 			case <-ticker.C:
 				if err := d.do(); err != nil {
-					er := utils.GetStackTrace(err)
-					err := d.sender.SendMessage(d.adminTo, fmt.Sprintf("failed: %v", er))
-					if err != nil {
+					if err := d.sender.SendMessage(d.adminTo, fmt.Sprintf("failed: %v", err)); err != nil {
 						d.logger.Error("ADMIN TG SEND FAILED", zap.Error(err))
 					}
 					d.logger.Error("failed", zap.Error(err))

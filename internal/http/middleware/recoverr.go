@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"miraclevpn/internal/services/sender"
-	"miraclevpn/internal/utils"
 	"net/http"
 	"strings"
 
@@ -16,17 +15,11 @@ func Recovery(debug bool, sender sender.Sender, adminTo string, logger *zap.Logg
 	return gin.RecoveryWithWriter(gin.DefaultErrorWriter, func(ctx *gin.Context, err interface{}) {
 		requestInfo := collectRequestInfo(ctx)
 
-		errField := err
-		er, ok := err.(error)
-		if ok {
-			errField = utils.GetStackTrace(er)
-		}
-
-		errorMessage := fmt.Sprintf("Panic recovered: %v", errField)
+		errorMessage := fmt.Sprintf("Panic recovered: %v", err)
 		fullErrorMessage := fmt.Sprintf("%s\n\nRequest details:\n%s", errorMessage, requestInfo)
 
 		logger.Error("Panic recovered",
-			zap.Any("error", errField),
+			zap.Any("error", err),
 			zap.String("path", ctx.Request.URL.Path),
 			zap.String("method", ctx.Request.Method),
 			zap.Any("query_params", ctx.Request.URL.Query()),
@@ -35,7 +28,7 @@ func Recovery(debug bool, sender sender.Sender, adminTo string, logger *zap.Logg
 
 		if debug {
 			ctx.JSON(http.StatusInternalServerError, gin.H{
-				"error":   er,
+				"error":   err,
 				"details": requestInfo,
 			})
 		} else {

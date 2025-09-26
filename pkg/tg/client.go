@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 )
 
 var (
@@ -27,7 +28,7 @@ func NewTgClient(token string, name string) *TgClient {
 }
 
 func (c *TgClient) SendMessage(to string, message string) error {
-	resp, err := http.Get(fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage?chat_id=%s&text=%s", c.token, to, message))
+	resp, err := http.Get(fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage?chat_id=%s&text=%s", c.token, to, strings.ReplaceAll(message, " ", "+")))
 	if err != nil {
 		return err
 	}

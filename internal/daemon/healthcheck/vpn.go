@@ -5,7 +5,6 @@ import (
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/sender"
 	"miraclevpn/internal/services/vpn"
-	"miraclevpn/internal/utils"
 	"sync"
 	"time"
 
@@ -68,6 +67,10 @@ func (d *VpnHealthCheck) do() {
 		return
 	}
 
+	if len(srvs) == 0 {
+		d.logger.Info("VPN health check passed - servers is nil")
+	}
+
 	wg := sync.WaitGroup{}
 
 	for _, srv := range srvs {
@@ -78,23 +81,25 @@ func (d *VpnHealthCheck) do() {
 
 			status, err := d.vpnClient.GetStatus(srv.Host)
 			if err != nil {
-				er := utils.GetStackTrace(err)
-				err := d.sender.SendMessage(d.adminTo, fmt.Sprintf("VPN health check %s failed: %v", srv.Host, er))
-				if err != nil {
+				if err := d.sender.SendMessage(d.adminTo, fmt.Sprintf("VPN health check %s failed: %s", srv.Host, err)); err != nil {
 					d.logger.Error("ADMIN TG SEND FAILED", zap.Error(err))
 				}
-				d.logger.Error("VPN health check failed", zap.String("host", srv.Host), zap.String("error", er))
+				d.logger.Error("VPN health check failed", zap.String("host", srv.Host), zap.Error(err))
+				return
 			}
 
 			tenPersentUsers := srv.MaxUsers - (srv.MaxUsers / 10)
 
 			clients := len(status.Clients)
 			if len(status.Clients) > tenPersentUsers {
-				d.sender.SendMessage(d.adminTo, fmt.Sprintf("VPN HIGHLOAD! on %s: %d/%d", srv.Host, clients, srv.MaxUsers))
-				if err != nil {
+				if err := d.sender.SendMessage(d.adminTo, fmt.Sprintf("VPN HIGHLOAD! on %s: %d/%d", srv.Host, clients, srv.MaxUsers)); err != nil {
 					d.logger.Error("ADMIN TG SEND FAILED", zap.Error(err))
 				}
+				d.logger.Warn(fmt.Sprintf("VPN HIGHLOAD! on %s: %d/%d", srv.Host, clients, srv.MaxUsers))
+				return
 			}
+
+			d.logger.Info(srv.Host+" health check - OK", zap.Error(err))
 		}()
 	}
 

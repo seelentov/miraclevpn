@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"miraclevpn/internal/services/payment"
 	"miraclevpn/internal/services/sender"
-	"miraclevpn/internal/utils"
 	"time"
 
 	"go.uber.org/zap"
@@ -81,7 +80,8 @@ func (d *AutoPaymentDaemon) do() {
 }
 
 func (d *AutoPaymentDaemon) processErr(err error) {
-	er := utils.GetStackTrace(err)
-	d.sender.SendMessage(d.adminTo, fmt.Sprintf("Auto-payment daemon failed: %v", er))
-	d.logger.Error("Auto-payment daemon failed", zap.String("error", er))
+	if err := d.sender.SendMessage(d.adminTo, fmt.Sprintf("Auto-payment daemon failed: %v", err)); err != nil {
+		d.logger.Error("ADMIN TG SEND FAILED", zap.Error(err))
+	}
+	d.logger.Error("Auto-payment daemon failed", zap.Error(err))
 }

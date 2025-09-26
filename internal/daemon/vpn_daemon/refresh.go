@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"miraclevpn/internal/services/sender"
 	"miraclevpn/internal/services/servers"
-	"miraclevpn/internal/utils"
 	"time"
 
 	"go.uber.org/zap"
@@ -49,9 +48,10 @@ func (d *VpnRefreshDaemon) Start() {
 			select {
 			case <-ticker.C:
 				if err := d.do(); err != nil {
-					er := utils.GetStackTrace(err)
-					d.sender.SendMessage(d.adminTo, fmt.Sprintf("VPN refresh daemon failed: %v", er))
-					d.logger.Error("VPN refresh daemon failed", zap.String("error", er))
+					if err := d.sender.SendMessage(d.adminTo, fmt.Sprintf("VPN refresh daemon failed: %v", err)); err != nil {
+						d.logger.Error("ADMIN TG SEND FAILED", zap.Error(err))
+					}
+					d.logger.Error("VPN refresh daemon failed", zap.Error(err))
 				}
 			case <-d.stopChan:
 				d.logger.Info("Stopping VPN refresh daemon")

@@ -48,9 +48,12 @@ func (s *AutoPaymentService) Process(uID, email, paymentID string, getReceipt bo
 		Currency: plan.Currency,
 		Vat:      plan.VatCode,
 	}},
-		"",
 		getReceipt,
 		paymentID,
+		map[string]string{
+			"user_id": uID,
+			"email":   uID,
+		},
 	)
 
 	if err != nil {

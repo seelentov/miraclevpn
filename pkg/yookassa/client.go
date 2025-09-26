@@ -39,7 +39,7 @@ func NewClient(shopID, secret, returnURL string) *Client {
 	}
 }
 
-func (c *Client) CreatePayment(email string, description string, items []*payment.PaymentItem, paymentToken string, getReceipt bool, paymentMethodID string) (ID string, paymentURL string, err error) {
+func (c *Client) CreatePayment(email string, description string, items []*payment.PaymentItem, getReceipt bool, paymentMethodID string, meta map[string]string) (ID string, paymentURL string, err error) {
 	sum := 0.0
 	for _, it := range items {
 		sum += it.Value * float64(it.Quantity)
@@ -52,9 +52,7 @@ func (c *Client) CreatePayment(email string, description string, items []*paymen
 		},
 		Capture:     true,
 		Description: description,
-		MetaData: map[string]string{
-			"token": paymentToken,
-		},
+		MetaData:    meta,
 	}
 
 	if paymentMethodID == "" {
@@ -182,7 +180,7 @@ type createPaymentRequest struct {
 	Confirmation    confirmation                 `json:"confirmation,omitzero"`
 	Receipt         *createPaymentRequestReceipt `json:"receipt,omitempty"`
 	PaymentMethodID string                       `json:"payment_method_id,omitempty"`
-	MetaData        map[string]string            `json:"metadata"`
+	MetaData        map[string]string            `json:"metadata,omitempty"`
 }
 
 type amount struct {
