@@ -9,6 +9,8 @@ type Payment struct {
 	PlanID int64
 	Done   bool
 
+	Auto bool
+
 	Days int
 
 	CreatedAt time.Time

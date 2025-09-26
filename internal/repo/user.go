@@ -18,13 +18,21 @@ func NewUserRepository(db *gorm.DB, crypt cryptt.CryptService, freeTrial time.Du
 	return &UserRepository{db, crypt, freeTrial}
 }
 
-func (r *UserRepository) FindForPayment() ([]*models.User, error) {
+func (r *UserRepository) FindSubscribed() ([]*models.User, error) {
 	var u []*models.User
 
 	if err := r.db.Where("payment_id != ?", nil).Find(&u).Error; err != nil {
 		return nil, err
 	}
 
+	return u, nil
+}
+
+func (r *UserRepository) FindForAutoPayment() ([]*models.User, error) {
+	var u []*models.User
+	if err := r.db.Where("payment_id IS NOT NULL AND active = ? AND expired_at < ? AND email IS NOT NULL AND banned = ?", true, time.Now().Add(time.Hour*24*-1), false).Find(&u).Error; err != nil {
+		return nil, err
+	}
 	return u, nil
 }
 
@@ -66,9 +74,6 @@ func (r *UserRepository) AddSubDays(userID string, days int) error {
 	u.ExpiredAt = u.ExpiredAt.Add(time.Duration(days) * time.Hour * 24)
 	u.Trial = false
 
-	now := time.Now()
-	u.LastPaymentAt = &now
-
 	if err := r.db.Save(&u).Error; err != nil {
 		return err
 	}
@@ -83,7 +88,6 @@ func (r *UserRepository) UpdatePaymentMethod(userID string, paymentID string, pa
 	}
 
 	u.PaymentID = &paymentID
-	u.PaymentPlanID = &paymentPlanID
 
 	return r.db.Save(u).Error
 }
@@ -95,7 +99,6 @@ func (r *UserRepository) RemovePaymentMethod(userID string) error {
 	}
 
 	u.PaymentID = nil
-	u.PaymentPlanID = nil
 
 	return r.db.Save(u).Error
 }

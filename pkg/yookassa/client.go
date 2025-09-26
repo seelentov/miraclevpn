@@ -179,7 +179,7 @@ type createPaymentRequest struct {
 	Amount          amount                       `json:"amount"`
 	Capture         bool                         `json:"capture"`
 	Description     string                       `json:"description"`
-	Confirmation    confirmation                 `json:"confirmation,omitempty"`
+	Confirmation    confirmation                 `json:"confirmation,omitzero"`
 	Receipt         *createPaymentRequestReceipt `json:"receipt,omitempty"`
 	PaymentMethodID string                       `json:"payment_method_id,omitempty"`
 	MetaData        map[string]string            `json:"metadata"`

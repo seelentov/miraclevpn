@@ -14,9 +14,11 @@ func SetUserIDMiddleware(jwtSrv *crypt.JwtService) gin.HandlerFunc {
 		if authHeader != "" && !strings.HasPrefix(authHeader, "Bearer 0") && strings.HasPrefix(authHeader, "Bearer ") {
 			tokenStr := strings.TrimPrefix(authHeader, "Bearer ")
 			claims, err := jwtSrv.ParseToken(tokenStr)
-			userId, ok := claims.Data["user_id"]
-			if err == nil && ok {
-				ctx.Set("user_id", userId)
+			if err == nil {
+				userID, ok := claims.Data["user_id"]
+				if ok {
+					ctx.Set("user_id", userID)
+				}
 			}
 		}
 		ctx.Next()

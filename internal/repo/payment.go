@@ -20,19 +20,20 @@ func NewPaymentRepository(db *gorm.DB, expiration time.Duration) *PaymentReposit
 
 func (r *PaymentRepository) FindByYooKassaID(yooKassaID string) (*models.Payment, error) {
 	var p *models.Payment
-	if err := r.db.Where("yoo_kassa_id = ?", yooKassaID).First(&p).Error; err != nil {
+	if err := r.db.Where("yoo_kassa_id = ? AND done = ?", yooKassaID, false).First(&p).Error; err != nil {
 		return nil, err
 	}
 	return p, nil
 }
 
-func (r *PaymentRepository) Create(uID string, yooKassaID string, days int, planID int64) error {
+func (r *PaymentRepository) Create(uID string, yooKassaID string, days int, planID int64, auto bool) error {
 	p := models.Payment{
 		UserID:     uID,
 		YooKassaID: yooKassaID,
 		Days:       days,
-		Done:       false,
+		Done:       auto,
 		PlanID:     planID,
+		Auto:       auto,
 	}
 
 	if err := r.db.Save(&p).Error; err != nil {

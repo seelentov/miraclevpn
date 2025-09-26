@@ -104,7 +104,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gormDB, err := db.NewPostgreConn(dbHost, dbUser, dbPass, dbName, dbPort, dbSsl, dbTZ)
+	gormDB, err := db.NewPostgreConn(dbHost, dbUser, dbPass, dbName, dbPort, dbSsl, dbTZ, "MIIVPN_API")
 	if err != nil {
 		logger.Logger.Fatal("failed to connect to db", zap.Error(err))
 	}
@@ -184,6 +184,7 @@ func main() {
 			{
 				payment.POST("/hook", payCtrl.PostPaymentHook)
 				payment.POST("/create", payCtrl.PostCreate)
+				payment.POST("/remove", payCtrl.PostRemovePaymentMethod)
 			}
 
 			if len(proofKeys) > 0 {

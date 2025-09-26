@@ -36,6 +36,9 @@ func NewPaymentService(client PaymentClient, payRepo *repo.PaymentRepository, pa
 
 func (s *PaymentService) Create(uID, email string, plan *models.PaymentPlan, getReceipt bool) (payURL string, err error) {
 	token, err := s.makeToken(uID, plan.ID)
+	if err != nil {
+		return "", err
+	}
 
 	yooKassaID, payURL, err := s.client.CreatePayment(email, plan.PayDesc, []*PaymentItem{{
 		Name:     plan.PayDesc,
@@ -54,7 +57,7 @@ func (s *PaymentService) Create(uID, email string, plan *models.PaymentPlan, get
 	}
 
 	s.logger.Info("payment created", zap.String("user_id", uID), zap.String("yoo_kassa_id", yooKassaID), zap.String("pay_url", payURL))
-	return payURL, s.payRepo.Create(uID, yooKassaID, plan.Days, plan.ID)
+	return payURL, s.payRepo.Create(uID, yooKassaID, plan.Days, plan.ID, false)
 }
 
 func (s *PaymentService) Find(yooKassaID string) (*models.Payment, error) {
@@ -88,6 +91,6 @@ func (s *PaymentService) makeToken(userID string, planID int64) (string, error) 
 	token, err := s.jwtService.GenerateToken(map[string]string{
 		"user_id": userID,
 		"plan":    strconv.Itoa(int(planID)),
-	}, time.Hour*1)
+	}, time.Minute*10)
 	return token, err
 }

@@ -38,7 +38,7 @@ func NewAutoPaymentDaemon(duration time.Duration, logger *zap.Logger, paySrv *pa
 func (d *AutoPaymentDaemon) Start() {
 	ticker := time.NewTicker(d.duration)
 
-	d.logger.Info("Starting VPN refresh daemon",
+	d.logger.Info("Starting auto-payment daemon",
 		zap.Duration("interval", d.duration))
 
 	go func() {
@@ -47,7 +47,7 @@ func (d *AutoPaymentDaemon) Start() {
 			case <-ticker.C:
 				d.do()
 			case <-d.stopChan:
-				d.logger.Info("Stopping VPN refresh daemon")
+				d.logger.Info("Stopping auto-payment daemon")
 				return
 			}
 		}
@@ -59,26 +59,29 @@ func (d *AutoPaymentDaemon) Stop() {
 }
 
 func (d *AutoPaymentDaemon) do() {
-	ups, err := d.paySrv.FindForPayment()
+	ups, err := d.paySrv.FindForAutoPayment()
 	if err != nil {
 		d.processErr(err)
 	}
 
 	for _, up := range ups {
 		if err := d.paySrv.Process(
-			up.User.ID,
-			*up.User.Email,
-			*up.User.PaymentID,
-			up.Plan,
-			false,
+			up.ID,
+			*up.Email,
+			*up.PaymentID,
+			true,
 		); err != nil {
 			d.processErr(err)
 		}
+
+		d.logger.Info("Auto-payment for", zap.Int("user_id", len(up.ID)))
 	}
+
+	d.logger.Info("Auto-payment daemon end iteration", zap.Int("ups", len(ups)))
 }
 
 func (d *AutoPaymentDaemon) processErr(err error) {
 	er := utils.GetStackTrace(err)
-	d.sender.SendMessage(d.adminTo, fmt.Sprintf("VPN refresh daemon failed: %v", er))
-	d.logger.Error("VPN refresh daemon failed", zap.String("error", er))
+	d.sender.SendMessage(d.adminTo, fmt.Sprintf("Auto-payment daemon failed: %v", er))
+	d.logger.Error("Auto-payment daemon failed", zap.String("error", er))
 }

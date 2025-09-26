@@ -31,3 +31,11 @@ func (r *PaymentPlanRepository) FindByID(planID int64) (*models.PaymentPlan, err
 	}
 	return p, nil
 }
+
+func (r *PaymentPlanRepository) FindMonthly() (*models.PaymentPlan, error) {
+	var payment models.PaymentPlan
+	if err := r.db.Where("days = ?", 31).First(&payment).Error; err != nil {
+		return nil, err
+	}
+	return &payment, nil
+}

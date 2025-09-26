@@ -5,6 +5,7 @@ import (
 	"miraclevpn/internal/http/controller"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
@@ -14,11 +15,19 @@ func main() {
 	if err := godotenv.Load(); err != nil {
 		log.Fatal(err)
 	}
+
+	debug := os.Getenv("DEBUG") == "true"
+
 	viewCtrl := controller.NewViewController()
 
 	r := gin.Default()
 	r.LoadHTMLGlob("templates/*.html")
-	r.SetTrustedProxies([]string{"127.0.0.1", "::1"})
+	if debug {
+		r.SetTrustedProxies(nil)
+	} else {
+		r.SetTrustedProxies([]string{"127.0.0.1", "::1"})
+	}
+
 	r.NoRoute(viewCtrl.NotFound)
 	r.Use(gin.RecoveryWithWriter(gin.DefaultErrorWriter, viewCtrl.Panic))
 
@@ -34,36 +43,65 @@ func main() {
 func setupStatic(r *gin.Engine) error {
 	publicDir := "./public"
 
-	var walkDir func(string) error
-	walkDir = func(path string) error {
-		entries, err := os.ReadDir(path)
+	var files []string
+	var dirs []string
+
+	err := filepath.Walk(publicDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		for _, entry := range entries {
-			fullPath := filepath.Join(path, entry.Name())
-			relativePath, err := filepath.Rel(publicDir, fullPath)
-			if err != nil {
-				return err
-			}
+		relativePath, err := filepath.Rel(publicDir, path)
+		if err != nil {
+			return err
+		}
 
-			webPath := "/" + relativePath
+		if relativePath == "." {
+			return nil
+		}
 
-			if entry.IsDir() {
-				log.Printf("Registering directory: %s -> %s", webPath, fullPath)
-				r.Static(webPath, fullPath)
+		webPath := "/" + filepath.ToSlash(relativePath)
 
-				if err := walkDir(fullPath); err != nil {
-					return err
-				}
-			} else {
-				log.Printf("Registering file: %s -> %s", webPath, fullPath)
-				r.StaticFile(webPath, fullPath)
-			}
+		if info.IsDir() {
+			dirs = append(dirs, webPath)
+		} else {
+			files = append(files, webPath)
 		}
 		return nil
+	})
+	if err != nil {
+		return err
 	}
 
-	return walkDir(publicDir)
+	for _, dir := range dirs {
+		hasFilesInDir := false
+		for _, file := range files {
+			if strings.HasPrefix(file, dir+"/") {
+				hasFilesInDir = true
+				break
+			}
+		}
+
+		if hasFilesInDir {
+			log.Printf("Registering directory: %s -> %s%s", dir, publicDir, dir)
+			r.Static(dir, publicDir+dir)
+		}
+	}
+
+	for _, file := range files {
+		inRegisteredDir := false
+		for _, dir := range dirs {
+			if strings.HasPrefix(file, dir+"/") {
+				inRegisteredDir = true
+				break
+			}
+		}
+
+		if !inRegisteredDir {
+			log.Printf("Registering file: %s -> %s%s", file, publicDir, file)
+			r.StaticFile(file, publicDir+file)
+		}
+	}
+
+	return nil
 }
