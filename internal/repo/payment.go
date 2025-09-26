@@ -26,12 +26,13 @@ func (r *PaymentRepository) FindByYooKassaID(yooKassaID string) (*models.Payment
 	return p, nil
 }
 
-func (r *PaymentRepository) Create(uID string, yooKassaID string, days int) error {
+func (r *PaymentRepository) Create(uID string, yooKassaID string, days int, planID int64) error {
 	p := models.Payment{
 		UserID:     uID,
 		YooKassaID: yooKassaID,
 		Days:       days,
 		Done:       false,
+		PlanID:     planID,
 	}
 
 	if err := r.db.Save(&p).Error; err != nil {

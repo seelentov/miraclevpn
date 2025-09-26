@@ -52,7 +52,7 @@ func main() {
 			} else {
 				fmt.Println(s.Host, len(status.Clients))
 				for _, c := range status.Clients {
-					us, err := usRepo.FindByConfigFile(c.CommonName)
+					us, err := usRepo.FindByConfigFile(c.CommonName, true)
 
 					if err != nil || us.UserID == "" {
 						us.UserID = "nil"

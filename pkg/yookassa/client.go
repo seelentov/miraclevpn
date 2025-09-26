@@ -30,7 +30,7 @@ type Client struct {
 	returnURL string
 }
 
-func NewClient(shopID, secret string, returnURL string) *Client {
+func NewClient(shopID, secret, returnURL string) *Client {
 	return &Client{
 		client:    &http.Client{},
 		shopID:    shopID,
@@ -39,8 +39,7 @@ func NewClient(shopID, secret string, returnURL string) *Client {
 	}
 }
 
-func (c *Client) CreatePayment(email string, description string, items []*payment.PaymentItem, getReceipt bool) (ID string, paymentURL string, err error) {
-
+func (c *Client) CreatePayment(email string, description string, items []*payment.PaymentItem, paymentToken string, getReceipt bool, paymentMethodID string) (ID string, paymentURL string, err error) {
 	sum := 0.0
 	for _, it := range items {
 		sum += it.Value * float64(it.Quantity)
@@ -53,10 +52,18 @@ func (c *Client) CreatePayment(email string, description string, items []*paymen
 		},
 		Capture:     true,
 		Description: description,
-		Confirmation: confirmation{
+		MetaData: map[string]string{
+			"token": paymentToken,
+		},
+	}
+
+	if paymentMethodID == "" {
+		payment.Confirmation = confirmation{
 			Type:      "redirect",
 			ReturnURL: c.returnURL,
-		},
+		}
+	} else {
+		payment.PaymentMethodID = paymentMethodID
 	}
 
 	if getReceipt {
@@ -120,23 +127,33 @@ type WebHookRes struct {
 	Event  string  `json:"event"`
 	Object Payment `json:"object"`
 	Type   string  `json:"type"`
+	/*
+			"payment_method" : {
+		Sep 23 07:24:05 5559569-nz15454 api[1808512]:       "type" : "yoo_money",
+		Sep 23 07:24:05 5559569-nz15454 api[1808512]:       "id" : "3064349b-000f-5001-8000-15cf5edc0bb6",
+		Sep 23 07:24:05 5559569-nz15454 api[1808512]:       "saved" : true,
+		Sep 23 07:24:05 5559569-nz15454 api[1808512]:       "status" : "active",
+		Sep 23 07:24:05 5559569-nz15454 api[1808512]:       "title" : "YooMoney wallet 410011758831136",
+		Sep 23 07:24:05 5559569-nz15454 api[1808512]:       "account_number" : "410011758831136"
+		Sep 23 07:24:05 5559569-nz15454 api[1808512]:     },
+	*/
 }
 
 type Payment struct {
-	Amount         Amount        `json:"amount"`
-	CapturedAt     time.Time     `json:"captured_at"`
-	CreatedAt      time.Time     `json:"created_at"`
-	Description    string        `json:"description"`
-	ID             string        `json:"id"`
-	IncomeAmount   Amount        `json:"income_amount"`
-	Metadata       interface{}   `json:"metadata"`
-	Paid           bool          `json:"paid"`
-	PaymentMethod  PaymentMethod `json:"payment_method"`
-	Recipient      Recipient     `json:"recipient"`
-	Refundable     bool          `json:"refundable"`
-	RefundedAmount Amount        `json:"refunded_amount"`
-	Status         string        `json:"status"`
-	Test           bool          `json:"test"`
+	Amount         Amount            `json:"amount"`
+	CapturedAt     time.Time         `json:"captured_at"`
+	CreatedAt      time.Time         `json:"created_at"`
+	Description    string            `json:"description"`
+	ID             string            `json:"id"`
+	IncomeAmount   Amount            `json:"income_amount"`
+	Metadata       map[string]string `json:"metadata"`
+	Paid           bool              `json:"paid"`
+	PaymentMethod  PaymentMethod     `json:"payment_method"`
+	Recipient      Recipient         `json:"recipient"`
+	Refundable     bool              `json:"refundable"`
+	RefundedAmount Amount            `json:"refunded_amount"`
+	Status         string            `json:"status"`
+	Test           bool              `json:"test"`
 }
 
 type Amount struct {
@@ -159,11 +176,13 @@ type Recipient struct {
 }
 
 type createPaymentRequest struct {
-	Amount       amount                       `json:"amount"`
-	Capture      bool                         `json:"capture"`
-	Description  string                       `json:"description"`
-	Confirmation confirmation                 `json:"confirmation"`
-	Receipt      *createPaymentRequestReceipt `json:"receipt,omitempty"`
+	Amount          amount                       `json:"amount"`
+	Capture         bool                         `json:"capture"`
+	Description     string                       `json:"description"`
+	Confirmation    confirmation                 `json:"confirmation,omitempty"`
+	Receipt         *createPaymentRequestReceipt `json:"receipt,omitempty"`
+	PaymentMethodID string                       `json:"payment_method_id,omitempty"`
+	MetaData        map[string]string            `json:"metadata"`
 }
 
 type amount struct {
@@ -203,7 +222,7 @@ type createPaymentResponse struct {
 	Test         bool                 `json:"test"`
 	Paid         bool                 `json:"paid"`
 	Refundable   bool                 `json:"refundable"`
-	Metadata     interface{}          `json:"metadata"`
+	Metadata     map[string]string    `json:"metadata"`
 }
 
 type recipient struct {

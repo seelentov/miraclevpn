@@ -22,14 +22,13 @@ func NewJwtService(secret string, logger *zap.Logger) *JwtService {
 }
 
 type Claims struct {
-	UserID string `json:"user_id"`
+	Data map[string]string `json:"data"`
 	jwt.RegisteredClaims
 }
 
-func (j *JwtService) GenerateToken(userID string, duration time.Duration) (string, error) {
-	j.logger.Debug("generating JWT token", zap.String("user_id", userID), zap.Duration("duration", duration))
+func (j *JwtService) GenerateToken(data map[string]string, duration time.Duration) (string, error) {
 	claims := &Claims{
-		UserID: userID,
+		Data: data,
 		RegisteredClaims: jwt.RegisteredClaims{
 			IssuedAt: jwt.NewNumericDate(time.Now()),
 		},
@@ -40,15 +39,13 @@ func (j *JwtService) GenerateToken(userID string, duration time.Duration) (strin
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signed, err := token.SignedString([]byte(j.secretKey))
 	if err != nil {
-		j.logger.Error("failed to sign JWT token", zap.String("user_id", userID), zap.Error(err))
+		j.logger.Error("failed to sign JWT token", zap.Error(err))
 		return "", err
 	}
-	j.logger.Debug("JWT token generated", zap.String("user_id", userID))
 	return signed, nil
 }
 
 func (j *JwtService) ParseToken(tokenStr string) (*Claims, error) {
-	j.logger.Debug("parsing JWT token")
 	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(j.secretKey), nil
 	})
@@ -61,6 +58,5 @@ func (j *JwtService) ParseToken(tokenStr string) (*Claims, error) {
 		j.logger.Warn("invalid JWT token")
 		return nil, ErrInvalidToken
 	}
-	j.logger.Debug("JWT token parsed", zap.String("user_id", claims.UserID))
 	return claims, nil
 }

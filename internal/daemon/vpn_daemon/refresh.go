@@ -66,6 +66,10 @@ func (d *VpnRefreshDaemon) Stop() {
 }
 
 func (d *VpnRefreshDaemon) do() error {
+	if err := d.srvSrv.UpdateOnline(); err != nil {
+		return err
+	}
+
 	if err := d.srvSrv.UpdateExpired(d.expiration); err != nil {
 		return err
 	}

@@ -33,5 +33,8 @@ func (c *UserController) GetUser(ctx *gin.Context) {
 		}
 		return
 	}
+
+	u.PaymentID = nil
+
 	ctx.JSON(http.StatusOK, GetUserRes(u))
 }

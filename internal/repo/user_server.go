@@ -77,10 +77,21 @@ func (r *UserServerRepository) Delete(uss []*models.UserServer) error {
 	return r.db.Delete(uss).Error
 }
 
-func (r *UserServerRepository) FindByConfigFile(configFile string) (*models.UserServer, error) {
+func (r *UserServerRepository) FindByConfigFile(configFile string, orExpired bool) (*models.UserServer, error) {
 	var us *models.UserServer
-	if err := r.db.Where("config_file = ? OR config_file_expired = ?", configFile, configFile).Find(&us).Error; err != nil {
+	if err := r.db.Where("config_file = ? OR config_file_expired = ?", configFile, configFile).First(&us).Error; err != nil {
 		return nil, err
 	}
 	return us, nil
+}
+
+func (r *UserServerRepository) UpdateExpirationByConfigFile(configFile string, date time.Time) error {
+	us, err := r.FindByConfigFile(configFile, false)
+	if err != nil {
+		return err
+	}
+
+	us.UpdatedAt = date
+
+	return r.db.Save(us).Error
 }

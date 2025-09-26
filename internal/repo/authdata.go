@@ -29,18 +29,7 @@ func (r *AuthDataRepository) Add(uid string, data map[string]interface{}) error 
 	return nil
 }
 
-func (r *AuthDataRepository) FindSuspicios() ([]*models.AuthData, error) {
-	var results []*models.AuthData
-
-	subQuery := r.db.Model(&models.AuthData{}).
-		Select("data->>'ip' as ip, COUNT(DISTINCT uid) as uid_count").
-		Where("data ? 'ip'").
-		Group("data->>'ip'").
-		Having("COUNT(DISTINCT uid) > 1")
-
-	err := r.db.
-		Joins("INNER JOIN (?) AS dup_ips ON auth_data.data->>'ip' = dup_ips.ip", subQuery).
-		Find(&results).Error
-
-	return results, err
+func (r *AuthDataRepository) FindSuspicious(hoursInterval int) ([]*models.AuthData, error) {
+	var authData []*models.AuthData
+	return authData, nil
 }

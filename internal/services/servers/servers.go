@@ -3,6 +3,7 @@ package servers
 
 import (
 	"errors"
+	"log"
 	"miraclevpn/internal/models"
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/vpn"
@@ -133,6 +134,40 @@ func (s *ServersService) GetServerStatus(serverID int64) (server *models.Server,
 	}
 
 	return srv, len(stat.Clients), nil
+}
+
+func (s *ServersService) UpdateOnline() error {
+	servers, err := s.GetAllServers()
+	if err != nil {
+		return err
+	}
+
+	wg := sync.WaitGroup{}
+	for _, ser := range servers {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			log.Println(ser)
+
+			status, err := s.vpnService.GetStatus(ser.Host)
+
+			if err != nil {
+				s.logger.Error("failed to get status", zap.Int64("server_id", ser.ID), zap.Error(err))
+				return
+			}
+
+			for _, client := range status.Clients {
+				if err := s.ursSrvRepo.UpdateExpirationByConfigFile(client.CommonName, time.Now()); err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+					s.logger.Error("failed to update user_server date", zap.String("config", client.CommonName), zap.Error(err))
+					return
+				}
+			}
+		}()
+	}
+	wg.Wait()
+
+	return nil
 }
 
 func (s *ServersService) UpdateExpired(expiration time.Duration) error {

@@ -37,12 +37,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if os.Getenv("PPROF_PORT") != "" {
-		go func() {
-			log.Println(http.ListenAndServe("localhost:"+os.Getenv("PPROF_PORT"), nil))
-		}()
-	}
-
 	dbUser := os.Getenv("DB_USER")
 	dbHost := os.Getenv("DB_HOST")
 	dbPass := os.Getenv("DB_PASSWORD")
@@ -53,7 +47,8 @@ func main() {
 	logDir := os.Getenv("LOG_DIR")
 	logRetain, _ := strconv.Atoi(os.Getenv("LOG_RETAIN"))
 	debug := os.Getenv("DEBUG") == "true"
-	jwtSecret := os.Getenv("JWT_SECRET")
+	jwtSecretAuth := os.Getenv("JWT_SECRET)AUTH")
+	jwtSecretPayment := os.Getenv("JWT_SECRET_PAYMENT")
 
 	sshUser := os.Getenv("SSH_USER")
 	sshStatusPath := os.Getenv("SSH_STATUS_PATH")
@@ -114,6 +109,13 @@ func main() {
 		logger.Logger.Fatal("failed to connect to db", zap.Error(err))
 	}
 
+	if os.Getenv("PPROF_PORT") != "" {
+		go func() {
+			logger.Logger.Info("Open pprof on :" + os.Getenv("PPROF_PORT"))
+			log.Println(http.ListenAndServe(":"+os.Getenv("PPROF_PORT"), nil))
+		}()
+	}
+
 	argonParams := &crypt.Argon2idParams{
 		Memory:      64 * 1024,
 		Iterations:  3,
@@ -122,7 +124,8 @@ func main() {
 		KeyLength:   32,
 	}
 	argonSrv := crypt.NewArgonService(argonParams, logger.Logger)
-	jwtSrv := crypt.NewJwtService(jwtSecret, logger.Logger)
+	jwtSrv := crypt.NewJwtService(jwtSecretAuth, logger.Logger)
+	jwtPaySrv := crypt.NewJwtService(jwtSecretPayment, logger.Logger)
 
 	userRepo := repo.NewUserRepository(gormDB, argonSrv, time.Duration(freeTrial)*time.Second)
 	serverRepo := repo.NewServerRepository(gormDB)
@@ -142,7 +145,7 @@ func main() {
 	userSrv := user.NewUserService(userRepo, logger.Logger)
 	serversSrv := servers.NewServersService(userServerRepo, serverRepo, userRepo, vpnSrv, logger.Logger)
 	infoSrv := info.NewInfoService(newsRepo, infoRepo, keyValueRepo, payPlRepo)
-	paySrv := payment.NewPaymentService(paymentClient, payRepo, payPlRepo, logger.Logger)
+	paySrv := payment.NewPaymentService(paymentClient, payRepo, payPlRepo, jwtPaySrv, logger.Logger)
 
 	authCtrl := controller.NewAuthController(authSrv, jwtSrv, jwtDuration)
 	userCtrl := controller.NewUserController(userSrv)
@@ -170,6 +173,8 @@ func main() {
 	api := r.Group("/api")
 	{
 		api.GET("/ping", infoCtrl.GetPing)
+
+		api.POST("/echo", infoCtrl.PostEcho)
 
 		v1 := api.Group("/v1")
 		{
@@ -233,4 +238,6 @@ func main() {
 	}
 
 	r.Run(":" + os.Getenv("PORT"))
+
+	select {}
 }

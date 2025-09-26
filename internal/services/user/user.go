@@ -55,3 +55,15 @@ func (s *UserService) AddDays(id string, days int) error {
 	}
 	return nil
 }
+
+func (s *UserService) UpdatePaymentMethod(userID string, paymentID string, paymentPlanID int64) error {
+	return s.userRepo.UpdatePaymentMethod(userID, paymentID, paymentPlanID)
+}
+
+func (s *UserService) RemovePaymentMethod(userID string) error {
+	return s.userRepo.RemovePaymentMethod(userID)
+}
+
+func (s *UserService) UpdateEmail(uID string, email string) error {
+	return s.userRepo.UpdateEmail(uID, email)
+}

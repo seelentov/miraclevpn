@@ -77,5 +77,5 @@ func (d *AuthFindSuspicious) Stop() {
 }
 
 func (d *AuthFindSuspicious) do() ([]*models.AuthData, error) {
-	return d.authRepo.FindSuspicios()
+	return d.authRepo.FindSuspicious(int(d.duration.Hours()))
 }

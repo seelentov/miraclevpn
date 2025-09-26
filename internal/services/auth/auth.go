@@ -69,7 +69,9 @@ func (s *AuthService) Authenticate(uID string, data map[string]interface{}) (str
 		return "", err
 	}
 
-	token, err := s.jwtService.GenerateToken(uID, s.jwtDuration)
+	token, err := s.jwtService.GenerateToken(map[string]string{
+		"user_id": uID,
+	}, s.jwtDuration)
 	if err != nil {
 		return "", err
 	}
@@ -78,7 +80,9 @@ func (s *AuthService) Authenticate(uID string, data map[string]interface{}) (str
 }
 
 func (s *AuthService) GenerateToken(userID string) (string, error) {
-	token, err := s.jwtService.GenerateToken(userID, s.jwtDuration)
+	token, err := s.jwtService.GenerateToken(map[string]string{
+		"user_id": userID,
+	}, s.jwtDuration)
 	if err != nil {
 		s.logger.Error("failed to generate refresh token", zap.String("user_id", userID), zap.Error(err))
 		return "", err

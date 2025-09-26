@@ -10,11 +10,6 @@ import (
 	"go.uber.org/zap"
 )
 
-type ServerClients struct {
-	id      int64
-	clients int
-}
-
 type PaymentRemoveExpired struct {
 	payRepo *repo.PaymentRepository
 

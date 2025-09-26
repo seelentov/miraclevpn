@@ -12,5 +12,5 @@ type PaymentItem struct {
 }
 
 type PaymentClient interface {
-	CreatePayment(email string, description string, items []*PaymentItem, getReceipt bool) (ID string, paymentURL string, err error)
+	CreatePayment(email string, description string, items []*PaymentItem, paymentToken string, getReceipt bool, paymentMethodID string) (ID string, paymentURL string, err error)
 }

@@ -1,10 +1,14 @@
 package controller
 
 import (
+	"bytes"
+	"io"
+	"log"
 	"miraclevpn/internal/models"
 	"miraclevpn/internal/services/info"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -117,4 +121,69 @@ func (c *InfoController) GetPaymentPlan(ctx *gin.Context) {
 
 func (c *InfoController) GetPing(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, gin.H{"message": "pong"})
+}
+
+func (c *InfoController) PostEcho(ctx *gin.Context) {
+	requestInfo := gin.H{
+		"method":      ctx.Request.Method,
+		"url":         ctx.Request.URL.String(),
+		"protocol":    ctx.Request.Proto,
+		"host":        ctx.Request.Host,
+		"remote_addr": ctx.Request.RemoteAddr,
+		"timestamp":   time.Now().Format(time.RFC3339),
+	}
+
+	// Собираем заголовки
+	headers := gin.H{}
+	for name, values := range ctx.Request.Header {
+		if len(values) == 1 {
+			headers[name] = values[0]
+		} else {
+			headers[name] = values
+		}
+	}
+	requestInfo["headers"] = headers
+
+	// Собираем query parameters
+	queryParams := gin.H{}
+	for name, values := range ctx.Request.URL.Query() {
+		if len(values) == 1 {
+			queryParams[name] = values[0]
+		} else {
+			queryParams[name] = values
+		}
+	}
+	requestInfo["query_params"] = queryParams
+
+	// Читаем тело запроса
+	body, err := io.ReadAll(ctx.Request.Body)
+	if err != nil {
+		log.Printf("Error reading request body: %v", err)
+		requestInfo["body"] = "Error reading body: " + err.Error()
+	} else {
+		requestInfo["body"] = string(body)
+
+		// Восстанавливаем тело для возможного дальнейшего использования
+		ctx.Request.Body = io.NopCloser(bytes.NewBuffer(body))
+	}
+
+	// Логируем всю информацию
+	log.Printf("=== INCOMING REQUEST ===")
+	log.Printf("Method: %s", requestInfo["method"])
+	log.Printf("URL: %s", requestInfo["url"])
+	log.Printf("RemoteAddr: %s", requestInfo["remote_addr"])
+	log.Printf("Headers: %+v", headers)
+	log.Printf("QueryParams: %+v", queryParams)
+	log.Printf("Body: %s", requestInfo["body"])
+	log.Printf("========================")
+
+	// Формируем ответ
+	response := gin.H{
+		"status":   "success",
+		"message":  "Request received",
+		"request":  requestInfo,
+		"received": time.Now().Format(time.RFC3339),
+	}
+
+	ctx.JSON(http.StatusOK, response)
 }

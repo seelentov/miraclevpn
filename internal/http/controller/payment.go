@@ -47,6 +47,10 @@ func (c *PaymentController) PostCreate(ctx *gin.Context) {
 		panic(err)
 	}
 
+	if err := c.userService.UpdateEmail(req.UserID, req.Email); err != nil {
+		panic(err)
+	}
+
 	ctx.JSON(http.StatusOK, PostCreateRes{
 		PayURL: payURL,
 	})
@@ -65,11 +69,33 @@ func (c *PaymentController) PostPaymentHook(ctx *gin.Context) {
 		panic(err)
 	}
 
+	token := req.Object.Metadata["token"]
+
+	if err := c.payService.ValidateToken(token, payment.UserID, payment.PlanID); err != nil {
+		panic(err)
+	}
+
 	if err := c.userService.AddDays(payment.UserID, payment.Days); err != nil {
 		panic(err)
 	}
 
+	if req.Object.PaymentMethod.Saved {
+		if err := c.userService.UpdatePaymentMethod(payment.UserID, req.Object.PaymentMethod.ID, payment.PlanID); err != nil {
+			panic(err)
+		}
+	}
+
 	if err := c.payService.Done(payment.YooKassaID); err != nil {
+		panic(err)
+	}
+
+	ctx.JSON(http.StatusOK, NewMessageRes("ok"))
+}
+
+func (c *PaymentController) PostRemovePaymentMethod(ctx *gin.Context) {
+	userID, _ := ctx.Get("user_id")
+
+	if err := c.userService.RemovePaymentMethod(userID.(string)); err != nil {
 		panic(err)
 	}
 
