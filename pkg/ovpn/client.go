@@ -35,10 +35,8 @@ func NewClient(username, statusPath, createUserFile, revokeUserFile string, user
 
 func (c *Client) GetStatus(host string) (*vpn.Status, error) {
 	status := &vpn.Status{}
-	cmd := exec.Command(
-		"ssh",
-		"-o StrictHostKeyChecking=no",
-		fmt.Sprintf("%s@%s", c.username, host),
+	cmd := doCmd(
+		c.username, host,
 		"cat "+c.statusPath,
 	)
 
@@ -63,10 +61,8 @@ func (c *Client) CreateUser(host string) (config string, filename string, err er
 		return "", "", err
 	}
 
-	cmd := exec.Command(
-		"ssh",
-		"-o", "StrictHostKeyChecking=no",
-		fmt.Sprintf("%s@%s", c.username, host),
+	cmd := doCmd(
+		c.username, host,
 		"sudo", c.createUserFile, username,
 	)
 	output, err := cmd.CombinedOutput()
@@ -74,12 +70,11 @@ func (c *Client) CreateUser(host string) (config string, filename string, err er
 		return "", "", fmt.Errorf("create user failed: %v, output: %s", err, string(output))
 	}
 
-	cmd = exec.Command(
-		"ssh",
-		"-o", "StrictHostKeyChecking=no",
-		fmt.Sprintf("%s@%s", c.username, host),
+	cmd = doCmd(
+		c.username, host,
 		"cat", fmt.Sprintf("%s/%s.ovpn", c.userFilesDir, username),
 	)
+
 	output, err = cmd.CombinedOutput()
 	if err != nil {
 		return "", "", fmt.Errorf("failed to get ovpn file after creation: %v, output: %s", err, string(output))
@@ -89,10 +84,8 @@ func (c *Client) CreateUser(host string) (config string, filename string, err er
 }
 
 func (c *Client) DeleteUser(host string, username string) error {
-	cmd := exec.Command(
-		"ssh",
-		"-o", "StrictHostKeyChecking=no",
-		fmt.Sprintf("%s@%s", c.username, host),
+	cmd := doCmd(
+		c.username, host,
 		"sudo", c.revokeUserFile, username,
 	)
 	output, err := cmd.CombinedOutput()
@@ -100,10 +93,8 @@ func (c *Client) DeleteUser(host string, username string) error {
 		return fmt.Errorf("delete user failed: %v, output: %s", err, string(output))
 	}
 
-	cmd = exec.Command(
-		"ssh",
-		"-o", "StrictHostKeyChecking=no",
-		fmt.Sprintf("%s@%s", c.username, host),
+	cmd = doCmd(
+		c.username, host,
 		"sudo", "rm", c.userFilesDir+username+".ovpn",
 	)
 	output, err = cmd.CombinedOutput()
@@ -115,10 +106,8 @@ func (c *Client) DeleteUser(host string, username string) error {
 }
 
 func (c *Client) generateUsername(host string) (string, error) {
-	cmd := exec.Command(
-		"ssh",
-		"-o", "StrictHostKeyChecking=no",
-		fmt.Sprintf("%s@%s", c.username, host),
+	cmd := doCmd(
+		c.username, host,
 		"find "+c.userFilesDir+" -maxdepth 1 -type f -name \"*.ovpn\" -printf \"%f\\n\"",
 	)
 
@@ -238,4 +227,17 @@ func parseClientRecord(record []string) (*vpn.VpnClient, error) {
 		BytesSent:      bytesSent,
 		ConnectedSince: connectedSince,
 	}, nil
+}
+
+func doCmd(username, host string, command ...string) *exec.Cmd {
+	args := []string{
+		"-o StrictHostKeyChecking=no",
+		"-o ConnectTimeout=10",
+		"-o ServerAliveInterval=5",
+		"-o ServerAliveCountMax=2",
+		fmt.Sprintf("%s@%s", username, host),
+	}
+	args = append(args, command...)
+
+	return exec.Command("ssh", args...)
 }

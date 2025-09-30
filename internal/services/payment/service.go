@@ -76,6 +76,10 @@ func (s *PaymentService) FindPlanByID(planID int64) (*models.PaymentPlan, error)
 	return s.payPlanRepo.FindByID(planID)
 }
 
+func (s *PaymentService) FindAllPlans() ([]*models.PaymentPlan, error) {
+	return s.payPlanRepo.FindAll()
+}
+
 func (s *PaymentService) ValidateToken(token string, userID string, planID int64) error {
 	claims, err := s.jwtService.ParseToken(token)
 	if err != nil {

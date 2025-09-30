@@ -47,7 +47,7 @@ func main() {
 	logDir := os.Getenv("LOG_DIR")
 	logRetain, _ := strconv.Atoi(os.Getenv("LOG_RETAIN"))
 	debug := os.Getenv("DEBUG") == "true"
-	jwtSecretAuth := os.Getenv("JWT_SECRET)AUTH")
+	jwtSecretAuth := os.Getenv("JWT_SECRET_AUTH")
 	jwtSecretPayment := os.Getenv("JWT_SECRET_PAYMENT")
 
 	sshUser := os.Getenv("SSH_USER")
@@ -214,7 +214,7 @@ func main() {
 					serverGroup.GET("/", serverCtrl.GetServers)
 					serverGroup.GET("/region", serverCtrl.GetRegions)
 					serverGroup.GET("/region/:region", serverCtrl.GetServersByRegion)
-					serverGroup.GET("/:id", serverCtrl.GetServer)
+					serverGroup.GET("/:id", middleware.CheckUserMiddleware(userRepo), serverCtrl.GetServer)
 					serverGroup.GET("/status/:id", serverCtrl.GetServerStatus)
 					serverGroup.GET("/status/region/:region", serverCtrl.GetRegionStatus)
 

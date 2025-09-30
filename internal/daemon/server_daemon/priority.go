@@ -76,27 +76,56 @@ func (d *ServerAutoPriority) do() error {
 		return err
 	}
 
-	srvsClients := make([]*ServerClients, 0)
+	if len(srvs) == 0 {
+		d.logger.Info("No servers found")
+		return nil
+	}
+
+	srvsClients := make([]*ServerClients, 0, len(srvs))
 
 	for _, srv := range srvs {
 		status, err := d.vpnClient.GetStatus(srv.Host)
 		if err != nil {
-			srvsClients = append(srvsClients, &ServerClients{
-				id:      srv.ID,
-				clients: len(status.Clients),
-			})
+			d.logger.Warn("Failed to get server status",
+				zap.String("host", srv.Host),
+				zap.Error(err))
+			// Пропускаем сервер с ошибкой
+			continue
 		}
+
+		srvsClients = append(srvsClients, &ServerClients{
+			id:      srv.ID,
+			clients: len(status.Clients),
+		})
+	}
+
+	if len(srvsClients) == 0 {
+		d.logger.Info("No servers with valid status found")
+		return nil
 	}
 
 	sort.Slice(srvsClients, func(i, j int) bool {
 		return srvsClients[i].clients > srvsClients[j].clients
 	})
 
+	d.logger.Info("Updating server priorities",
+		zap.Int("servers_count", len(srvsClients)))
+
 	for i, srv := range srvsClients {
 		if err := d.srvRepo.UpdatePriority(srv.id, i*1000); err != nil {
+			d.logger.Error("Failed to update priority",
+				zap.Int64("server_id", srv.id),
+				zap.Error(err))
 			return err
 		}
+		d.logger.Debug("Priority updated",
+			zap.Int64("server_id", srv.id),
+			zap.Int("priority", i*1000),
+			zap.Int("clients", srv.clients))
 	}
+
+	d.logger.Info("Server priorities updated successfully",
+		zap.Int("servers_processed", len(srvsClients)))
 
 	return nil
 }

@@ -43,15 +43,7 @@ func (c *AuthController) PostLogin(ctx *gin.Context) {
 	req.Data["ip"] = ctx.GetHeader("X-Real-Ip")
 
 	token, err := c.srv.Authenticate(req.UID, req.Data)
-	if err != nil {
-		if errors.Is(err, auth.ErrBanned) {
-			ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "Пользователь заблокирован"})
-			return
-		} else if errors.Is(err, auth.ErrExpired) {
-			ctx.AbortWithStatusJSON(http.StatusPaymentRequired, gin.H{"error": "Подписка истекла"})
-			return
-		}
-
+	if err != nil && !errors.Is(err, auth.ErrBanned) && !errors.Is(err, auth.ErrExpired) {
 		panic(err)
 	}
 

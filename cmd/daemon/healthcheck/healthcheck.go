@@ -67,7 +67,7 @@ func main() {
 	healthCheckDuration := time.Second * time.Duration(healthCheckIntervalSec)
 
 	dbHealthCheck := healthcheck.NewDBHealthCheck(gormDB, healthCheckDuration, logger.Logger, tgSenderHealthCheck, tgChatIDHealthCheck)
-	// dbHealthCheck.Start()
+	dbHealthCheck.Start()
 	defer dbHealthCheck.Stop()
 
 	vpnHealthCheck := healthcheck.NewVpnHealthCheck(healthCheckDuration, logger.Logger, vpnSrv, serverRepo, tgSenderHealthCheck, tgChatIDHealthCheck)
@@ -75,7 +75,7 @@ func main() {
 	defer vpnHealthCheck.Stop()
 
 	tgHealthCheck := healthcheck.NewTgHealthCheck(healthCheckDuration, logger.Logger, tgSenderHealthCheck, tgChatIDHealthCheck, false)
-	// tgHealthCheck.Start()
+	tgHealthCheck.Start()
 	defer tgHealthCheck.Stop()
 
 	select {}

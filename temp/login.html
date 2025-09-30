@@ -1,0 +1,14 @@
+{{define "content"}}
+<main>
+    <form action="/login" method="post">
+        <div class="input">
+            <label for="token">Введите ID:</label>
+            <input id="token" value="" placeholder="UID" name="token" />
+        </div>
+        <p class="text-description">UID можно получить в <a href="/build.apk">мобильном приложении</a>. Вкладка
+            "Настройки", кнопка "Скопировать UID"</p>
+        <input hidden name="redirectTo" id="redirectTo" value="" />
+    </form>
+</main>
+
+{{end}}

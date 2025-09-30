@@ -1,12 +1,12 @@
 [Unit]
-Description=MiiVPN - Payment Clear
+Description=MiiVPN - Payment
 After=network.target
 
 [Service]
 Type=simple
 User=komkov.vv
 WorkingDirectory=/home/komkov.vv/mii_api
-ExecStart=/home/komkov.vv/mii_api/payment_clear
+ExecStart=/home/komkov.vv/mii_api/payment
 Restart=on-failure
 RestartSec=5s
 

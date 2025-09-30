@@ -71,7 +71,12 @@
 }
 
 .header__nav {
-    margin: auto 0
+    margin: auto 0;
+    margin-right: 0px;
+    margin-left: 0px;
+    margin-left: auto;
+    margin-right: 22px;
+
 }
 
 .header__nav ul {
@@ -730,7 +735,7 @@ h6 {
         padding: 10px !important;
         -webkit-box-pack: center;
         -ms-flex-pack: center;
-        justify-content: center;
+        justify-content: space-between;
         -webkit-box-align: center;
         -ms-flex-align: center;
         align-items: center
@@ -850,4 +855,9 @@ h6 {
     .container {
         max-width: 320px
     }
+}
+
+.button.button-mini {
+    padding: 5px 16px;
+    font-size: 16px;
 }

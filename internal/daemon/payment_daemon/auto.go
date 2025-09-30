@@ -71,6 +71,7 @@ func (d *AutoPaymentDaemon) do() {
 			true,
 		); err != nil {
 			d.processErr(err)
+			continue
 		}
 
 		d.logger.Info("Auto-payment for", zap.Int("user_id", len(up.ID)))
