@@ -32,7 +32,7 @@ func (c *ViewPaymentController) GetPayments(ctx *gin.Context) {
 }
 
 type PostPaymentReq struct {
-	Email  string `form:"email" binding:"required"`
+	Email  string `form:"email" binding:"required,email"`
 	PlanID int64  `form:"plan_id" binding:"required"`
 }
 
@@ -41,7 +41,7 @@ func (c *ViewPaymentController) PostPayment(ctx *gin.Context) {
 	userID := userIDAny.(string)
 
 	var req PostPaymentReq
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		panic(err)
 	}
 
@@ -59,7 +59,7 @@ func (c *ViewPaymentController) PostPayment(ctx *gin.Context) {
 		panic(err)
 	}
 
-	ctx.Redirect(http.StatusOK, payURL)
+	ctx.Redirect(http.StatusMovedPermanently, payURL)
 }
 
 func (c *ViewPaymentController) PostRemovePaymentMethod(ctx *gin.Context) {
@@ -69,5 +69,5 @@ func (c *ViewPaymentController) PostRemovePaymentMethod(ctx *gin.Context) {
 		panic(err)
 	}
 
-	ctx.HTML(http.StatusOK, "success_payment_remove.html", nil)
+	ctx.Redirect(http.StatusMovedPermanently, "/user")
 }

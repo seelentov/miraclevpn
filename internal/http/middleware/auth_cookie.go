@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log"
 	"miraclevpn/internal/services/cookie"
 	"miraclevpn/internal/services/crypt"
 
@@ -9,12 +10,15 @@ import (
 
 func AuthCookie(jwtSrv *crypt.JwtService, cookieSrv *cookie.CookieService) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		token := ctx.Param("token")
+		auth, err := cookieSrv.GetAuth(ctx)
+
+		token := ctx.Request.URL.Query().Get("token")
+		log.Println(token)
 		if token != "" {
 			cookieSrv.SetAuth(ctx, token)
+			auth = token
 		}
 
-		auth, err := cookieSrv.GetAuth(ctx)
 		if auth != "" && err == nil {
 			claims, err := jwtSrv.ParseToken(auth)
 			if err == nil {
@@ -25,8 +29,9 @@ func AuthCookie(jwtSrv *crypt.JwtService, cookieSrv *cookie.CookieService) gin.H
 			} else {
 				cookieSrv.RemoveAuth(ctx)
 			}
+		} else {
+			log.Println(err)
 		}
 		ctx.Next()
-
 	}
 }

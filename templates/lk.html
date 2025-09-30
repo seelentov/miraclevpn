@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+{{template "head.html"}}
+
+<body>
+    {{template "header.html"}}
+    <div class="wrapper">
+        <main>
+            <div class="container center">
+                <div class="block" style="max-width: 320px;">
+                    <br />
+                    <div>
+                        <strong>UID аккаунта: </strong> {{.UserID}}
+                    </div>
+                    <div class="days-container">
+                        <div class="circle">
+                            <div class="circle-line" style="
+                                    border-top-color: {{if gt .Days 0}}#007AFF{{else}}transparent{{end}};
+                                    border-right-color: {{if gt .Days 7}}#007AFF{{else}}transparent{{end}};
+                                    border-bottom-color: {{if gt .Days 14}}#007AFF{{else}}transparent{{end}};
+                                    border-left-color: {{if gt .Days 21}}#007AFF{{else}}transparent{{end}};
+                                "></div>
+                            <div class=" circle-text-block">
+                                <div class="circle-desc">Осталось</div>
+                                <div class="circle-text">{{.Days}}</div>
+                                <div class="circle-desc">Дней</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="center">
+                        <a href="/payments" class="button button-middle button-width">Продлить подписку</a>
+                    </div>
+                    <br />
+                    {{if .HavePaymentID}}
+                    <hr />
+                    <p>
+                        <strong>Следующее списание:</strong> {{.SubDate.Format "02.01.2006 15:04"}}
+                    </p>
+                    <br />
+                    <p>
+                        <strong>Стоимость: </strong> 200.00 ₽
+                    </p>
+                    <br />
+
+                    <form class="center" method="post" action="/user/remove-payment">
+                        <button class="button button-middle button-width button-red">Отменить
+                            подписку</button>
+                    </form>
+                    <br />
+                    {{end}}
+                </div>
+            </div>
+    </div>
+    </main>
+    </div>
+    {{template "footer.html"}}
+    {{template "script.html"}}
+</body>
+
+</html>

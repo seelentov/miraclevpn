@@ -52,6 +52,15 @@
     gap: 10px
 }
 
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 9999;
+    background-color: white;
+}
+
 .header__container {
     padding: 10px !important;
     display: -webkit-box;
@@ -379,7 +388,12 @@
     color: #fff;
     border-radius: 20px;
     -webkit-transition: all .1s ease-in;
-    transition: all .1s ease-in
+    transition: all .1s ease-in;
+    text-align: center;
+}
+
+.button.button-mini {
+    padding: 5px 10px !important;
 }
 
 .button:hover {
@@ -419,7 +433,24 @@
     border: none;
     padding: 10px 15px;
     background: #d8d8d8;
-    font-size: 14px
+    font-size: 14px;
+    text-wrap: nowrap;
+}
+
+.table thead tr {
+    text-wrap: nowrap;
+}
+
+.table tbody tr {
+    text-wrap: nowrap;
+}
+
+.table tbody tr {
+    text-wrap: nowrap;
+}
+
+.text-wrap {
+    text-wrap: wrap;
 }
 
 .table thead tr th:first-child {
@@ -460,6 +491,7 @@
 }
 
 .wrapper {
+    margin-top: 50px;
     min-height: 100%;
     display: -webkit-box;
     display: -ms-flexbox;
@@ -805,7 +837,6 @@ h6 {
 
     .hero__image img {
         height: auto;
-        width: 241px
     }
 
     .hero__image-phone {
@@ -859,5 +890,157 @@ h6 {
 
 .button.button-mini {
     padding: 5px 16px;
+    border-radius: 9px;
+    font-size: 13px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 300;
+}
+
+.button.button-middle {
+    padding: 5px 16px;
+    border-radius: 9px;
     font-size: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 300;
+}
+
+.input {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 30px;
+
+    input {
+        border-radius: 9px;
+        padding: 2px 10px;
+        border: 1px solid black;
+        width: 100%;
+    }
+
+    label {
+        text-wrap: nowrap;
+    }
+}
+
+.block {
+    border-width: 1px;
+    border-style: solid;
+    border-color: black;
+    padding: 10px 30px;
+    margin-bottom: 10px;
+    border-radius: 10px;
+}
+
+.block__title {}
+
+.block__description {
+    font-size: 12px;
+}
+
+.center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.block.active {
+    background-color: #2f95dc;
+    color: white;
+    border-color: #2f95dc;
+}
+
+.option {
+    cursor: pointer;
+    transition: all ease-in-out 0.1s;
+}
+
+.option:hover {
+    scale: 0.95;
+}
+
+.text {
+    a {
+        color: #2f95dc;
+    }
+}
+
+.text-description {
+    font-size: 12px;
+}
+
+.days-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 10px;
+}
+
+.circle {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    position: relative;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f0f0f0;
+    /* Цвет фона круга */
+}
+
+.circle-line {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    border-radius: 50%;
+    border-width: 7px;
+    border-style: solid;
+    width: 170px;
+    height: 170px;
+    transform: rotate(40deg);
+}
+
+.circle-text-block {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.circle-text {
+    color: black;
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.circle-desc {
+    color: gray;
+    font-size: 12px;
+    line-height: 1.2;
+}
+
+.relative-block {
+    display: flex;
+    justify-content: space-around;
+}
+
+hr {
+    width: 100%;
+    height: 1px;
+    background-color: #000;
+    margin: 30px 0;
+}
+
+.button-width {
+    width: 100%;
+}
+
+.button-red {
+    background-color: red
 }

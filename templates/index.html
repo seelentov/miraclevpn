@@ -1,249 +1,266 @@
-{{define "content"}}
-<main>
-    <section id="hero" class="hero">
-        <div class="hero__container container">
-            <div class="hero__body">
-                <h1 class="hero__title super-header-text">
-                    Mii VPN
-                </h1>
-                <p class="hero__text">
-                    Надежный, удобный и быстрый VPN-сервис
-                </p>
-                <a href="build.apk" download class="hero__btn button">
-                    Скачать Android
-                </a>
-            </div>
-            <div class="hero__image-phone hero__image">
-                <picture>
-                    <source srcset="img/phone.webp" type="image/webp"><img src="img/phone.png" alt="MiiVPN">
-                </picture>
-            </div>
-            <div class="hero__image-pc hero__image">
-                <picture>
-                    <source srcset="img/phone2.webp" type="image/webp"><img src="img/phone2.png" alt="MiiVPN">
-                </picture>
-            </div>
+<!DOCTYPE html>
+<html lang="ru">
+{{template "head.html"}}
 
-        </div>
-    </section>
-    <section id="advantages" class="advantages">
-        <div class="advantages__container container">
-            <div class="advantages__header title-block">
-                <h2 class="advantages__title header-text">
-                    Преимущества Mii VPN
-                </h2>
-                <p class="advantages__text desc-text">
-                    Mii VPN предлагает высокую скорость соединения, надежную защиту данных и низкую стоимость.
-                </p>
-            </div>
-            <div class="advantages__items">
-                <div class="advantages__item">
-                    <div class="advantages__item-header">
-                        <div class="advantages__item-icon">
-                            <img src="img/speed.svg" alt="Speed">
-                        </div>
-                        <h3 class="advantages__item-title">
-                            Высокая скорость
-                        </h3>
+<body>
+    {{template "header.html"}}
+    <div class="wrapper">
+        <main>
+            <section id="hero" class="hero">
+                <div class="hero__container container">
+                    <div class="hero__body">
+                        <h1 class="hero__title super-header-text">
+                            Mii VPN
+                        </h1>
+                        <p class="hero__text">
+                            Надежный, удобный и быстрый VPN-сервис
+                        </p>
+                        <a href="build.apk" download class="hero__btn button">
+                            Скачать Android
+                        </a>
                     </div>
-                    <p class="advantages__item-text">
-                        Наслаждайтесь быстрым и стабильным соединением без задержек и прерываний до 500 Мбит/с.
-                    </p>
-                </div>
-                <div class="advantages__item">
-                    <div class="advantages__item-header">
-                        <div class="advantages__item-icon">
-                            <img src="img/person.svg" alt="Person">
-                        </div>
-                        <h3 class="advantages__item-title">
-                            Анонимность
-                        </h3>
+                    <div class="hero__image-phone hero__image">
+                        <picture>
+                            <source srcset="img/phone.webp" type="image/webp"><img src="img/phone.png" alt="MiiVPN">
+                        </picture>
                     </div>
-                    <p class="advantages__item-text">
-                        Мы не храним вашу историю и данные. Оставайтесь анонимными в сети.
-                    </p>
-                </div>
-                <div class="advantages__item">
-                    <div class="advantages__item-header">
-                        <div class="advantages__item-icon">
-                            <img src="img/ok.svg" alt="Ok">
-                        </div>
-                        <h3 class="advantages__item-title">
-                            Доступность
-                        </h3>
+                    <div class="hero__image-pc hero__image">
+                        <picture>
+                            <source srcset="img/phone2.webp" type="image/webp"><img src="img/phone2.png" alt="MiiVPN">
+                        </picture>
                     </div>
-                    <p class="advantages__item-text">
-                        Доступность к сервисам ежедневно, без ограничений по времени и трафику.
-                    </p>
-                </div>
-                <div class="advantages__item">
-                    <div class="advantages__item-header">
-                        <div class="advantages__item-icon">
-                            <img src="img/lock.svg" alt="Icon">
-                        </div>
-                        <h3 class="advantages__item-title">
-                            Шифрование
-                        </h3>
-                    </div>
-                    <p class="advantages__item-text">
-                        Мы используем современные протоколы шифрования для защиты ваших данных.
-                    </p>
-                </div>
-                <div class="advantages__item">
-                    <div class="advantages__item-header">
-                        <div class="advantages__item-icon">
-                            <img src="img/hand.svg" alt="Icon">
-                        </div>
-                        <h3 class="advantages__item-title">
-                            Удобность
-                        </h3>
-                    </div>
-                    <p class="advantages__item-text">
-                        Без регистрации и сложных настроек. Просто скачайте и подключитесь в один клик.
-                    </p>
-                </div>
-                <div class="advantages__item">
-                    <div class="advantages__item-header">
-                        <div class="advantages__item-icon">
-                            <img src="img/time.svg" alt="Icon">
-                        </div>
-                        <h3 class="advantages__item-title">
-                            Тестовый период
-                        </h3>
-                    </div>
-                    <p class="advantages__item-text">
-                        Бесплатный доступ к основным функциям в течении 2-х недель.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <section id="price" class="price">
-        <div class="price__container container">
-            <div class="price__header title-block">
-                <h2 class="price__title header-text">
-                    Тарифы
-                </h2>
-                <p class="price__text desc-text">
-                    Выберите подходящий тарифный план и получите доступ ко всем функциям Mii VPN
-                </p>
-            </div>
-            <div class="price__table">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Цена</th>
-                            <th>Длительность</th>
-                            <th>Скорость</th>
-                            <th>Доступ</th>
-                            <th>Шифрование</th>
-                            <th>Поддержка</th>
-                            <th>Ограничения</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>0 ₽</td>
-                            <td>2 недели</td>
-                            <td>до 500 мбит/c</td>
-                            <td>+</td>
-                            <td>+</td>
-                            <td>+</td>
-                            <td>Только первые 2 недели на аккаунт</td>
-                        </tr>
-                        <tr>
-                            <td>70 ₽</td>
-                            <td>Неделя</td>
-                            <td>до 500 мбит/c</td>
-                            <td>+</td>
-                            <td>+</td>
-                            <td>+</td>
-                            <td>-</td>
-                        </tr>
-                        <tr>
-                            <td>200 ₽</td>
-                            <td>Месяц</td>
-                            <td>до 500 мбит/c</td>
-                            <td>+</td>
-                            <td>+</td>
-                            <td>+</td>
-                            <td>-</td>
-                        </tr>
-                        <tr>
-                            <td>500 ₽</td>
-                            <td>3 месяца</td>
-                            <td>до 500 мбит/c</td>
-                            <td>+</td>
-                            <td>+</td>
-                            <td>+</td>
-                            <td>-</td>
-                        </tr>
-                        <tr>
-                            <td>1500 ₽</td>
-                            <td>Год</td>
-                            <td>до 500 мбит/c</td>
-                            <td>+</td>
-                            <td>+</td>
-                            <td>+</td>
-                            <td>-</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </section>
-    <section id="faq" class="faq">
-        <div class="faq__container container">
-            <div class="faq__header title-block">
-                <h2 class="faq__title header-text">
-                    Часто задаваемые вопросы
-                </h2>
-                <p class="faq__text desc-text">
-                    Ответы на часто задаваемые вопросы
-                </p>
-            </div>
-            <div class="faq__items">
-                <details class="faq__item">
-                    <summary class="faq__item-title">
-                        Нужна ли регистрация?
-                    </summary>
-                    <div class="faq__item-content">
-                        Нет. Для использования Mii VPN не требуется регистрация. Используется уникальный
-                        идентификатор
-                        устройства.
+                </div>
+            </section>
+            <section id="advantages" class="advantages">
+                <div class="advantages__container container">
+                    <div class="advantages__header title-block">
+                        <h2 class="advantages__title header-text">
+                            Преимущества Mii VPN
+                        </h2>
+                        <p class="advantages__text desc-text">
+                            Mii VPN предлагает высокую скорость соединения, надежную защиту данных и низкую стоимость.
+                        </p>
                     </div>
-                </details>
-                <details class="faq__item">
-                    <summary class="faq__item-title">
-                        Есть ли тестовый период?
-                    </summary>
-                    <div class="faq__item-content">
-                        Да. Бесплатный доступ в течении 14 дней.
+                    <div class="advantages__items">
+                        <div class="advantages__item">
+                            <div class="advantages__item-header">
+                                <div class="advantages__item-icon">
+                                    <img src="img/speed.svg" alt="Speed">
+                                </div>
+                                <h3 class="advantages__item-title">
+                                    Высокая скорость
+                                </h3>
+                            </div>
+                            <p class="advantages__item-text">
+                                Наслаждайтесь быстрым и стабильным соединением без задержек и прерываний до 500 Мбит/с.
+                            </p>
+                        </div>
+                        <div class="advantages__item">
+                            <div class="advantages__item-header">
+                                <div class="advantages__item-icon">
+                                    <img src="img/person.svg" alt="Person">
+                                </div>
+                                <h3 class="advantages__item-title">
+                                    Анонимность
+                                </h3>
+                            </div>
+                            <p class="advantages__item-text">
+                                Мы не храним вашу историю и данные. Оставайтесь анонимными в сети.
+                            </p>
+                        </div>
+                        <div class="advantages__item">
+                            <div class="advantages__item-header">
+                                <div class="advantages__item-icon">
+                                    <img src="img/ok.svg" alt="Ok">
+                                </div>
+                                <h3 class="advantages__item-title">
+                                    Доступность
+                                </h3>
+                            </div>
+                            <p class="advantages__item-text">
+                                Доступность к сервисам ежедневно, без ограничений по времени и трафику.
+                            </p>
+                        </div>
+                        <div class="advantages__item">
+                            <div class="advantages__item-header">
+                                <div class="advantages__item-icon">
+                                    <img src="img/lock.svg" alt="Icon">
+                                </div>
+                                <h3 class="advantages__item-title">
+                                    Шифрование
+                                </h3>
+                            </div>
+                            <p class="advantages__item-text">
+                                Мы используем современные протоколы шифрования для защиты ваших данных.
+                            </p>
+                        </div>
+                        <div class="advantages__item">
+                            <div class="advantages__item-header">
+                                <div class="advantages__item-icon">
+                                    <img src="img/hand.svg" alt="Icon">
+                                </div>
+                                <h3 class="advantages__item-title">
+                                    Удобность
+                                </h3>
+                            </div>
+                            <p class="advantages__item-text">
+                                Без регистрации и сложных настроек. Просто скачайте и подключитесь в один клик.
+                            </p>
+                        </div>
+                        <div class="advantages__item">
+                            <div class="advantages__item-header">
+                                <div class="advantages__item-icon">
+                                    <img src="img/time.svg" alt="Icon">
+                                </div>
+                                <h3 class="advantages__item-title">
+                                    Тестовый период
+                                </h3>
+                            </div>
+                            <p class="advantages__item-text">
+                                Бесплатный доступ к основным функциям в течении 2-х недель.
+                            </p>
+                        </div>
                     </div>
-                </details>
-                <details class="faq__item">
-                    <summary class="faq__item-title">
-                        Возможен ли возврат средств?
-                    </summary>
-                    <div class="faq__item-content">
-                        Да. При неудовлетворительной работе в связи со сбоями, не связанные с деятельность
-                        Роскомнадзора,
-                        вернем средства.
+                </div>
+            </section>
+
+            <section id="price" class="price">
+                <div class="price__container container">
+                    <div class="price__header title-block">
+                        <h2 class="price__title header-text">
+                            Тарифы
+                        </h2>
+                        <p class="price__text desc-text">
+                            Выберите подходящий тарифный план и получите доступ ко всем функциям Mii VPN
+                        </p>
                     </div>
-                </details>
-            </div>
-        </div>
-    </section>
-    <section id="download" class="download">
-        <div class="download__container container">
-            <a href="build.apk" download class="download__link">
-                <picture>
-                    <source srcset="img/android.webp" type="image/webp"><img src="/img/android.png"
-                        alt="MiiVPN Android">
-                </picture>
-            </a>
-        </div>
-    </section>
-</main>
-{{end}}
+                    <div class="price__table">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Цена</th>
+                                    <th>Длительность</th>
+                                    <th>Скорость</th>
+                                    <th>Доступ</th>
+                                    <th>Шифрование</th>
+                                    <th>Поддержка</th>
+                                    <th class="text-wrap">Ограничения</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>0.00 ₽</td>
+                                    <td>2 недели</td>
+                                    <td>до 500 мбит/c</td>
+                                    <td>+</td>
+                                    <td>+</td>
+                                    <td>+</td>
+                                    <td class="text-wrap">Только первые 2 недели на аккаунт</td>
+                                    <th><a href="/payments" class="button button-mini">Приобрести</a></th>
+                                </tr>
+                                <tr>
+                                    <td>70.00 ₽</td>
+                                    <td>Неделя</td>
+                                    <td>до 500 мбит/c</td>
+                                    <td>+</td>
+                                    <td>+</td>
+                                    <td>+</td>
+                                    <td class="text-wrap">-</td>
+                                    <th><a href="/payments" class="button button-mini">Приобрести</a></th>
+                                </tr>
+                                <tr>
+                                    <td>200.00 ₽</td>
+                                    <td>Месяц</td>
+                                    <td>до 500 мбит/c</td>
+                                    <td>+</td>
+                                    <td>+</td>
+                                    <td>+</td>
+                                    <td class="text-wrap">-</td>
+                                    <th><a href="/payments" class="button button-mini">Приобрести</a></th>
+                                </tr>
+                                <tr>
+                                    <td>500.00 ₽</td>
+                                    <td>3 месяца</td>
+                                    <td>до 500 мбит/c</td>
+                                    <td>+</td>
+                                    <td>+</td>
+                                    <td>+</td>
+                                    <td class="text-wrap">-</td>
+                                    <th><a href="/payments" class="button button-mini">Приобрести</a></th>
+                                </tr>
+                                <tr>
+                                    <td>1500.00 ₽</td>
+                                    <td>Год</td>
+                                    <td>до 500 мбит/c</td>
+                                    <td>+</td>
+                                    <td>+</td>
+                                    <td>+</td>
+                                    <td class="text-wrap">-</td>
+                                    <th><a href="/payments" class="button button-mini">Приобрести</a></th>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+            <section id="faq" class="faq">
+                <div class="faq__container container">
+                    <div class="faq__header title-block">
+                        <h2 class="faq__title header-text">
+                            Часто задаваемые вопросы
+                        </h2>
+                        <p class="faq__text desc-text">
+                            Ответы на часто задаваемые вопросы
+                        </p>
+                    </div>
+                    <div class="faq__items">
+                        <details class="faq__item">
+                            <summary class="faq__item-title">
+                                Нужна ли регистрация?
+                            </summary>
+                            <div class="faq__item-content">
+                                Нет. Для использования Mii VPN не требуется регистрация. Используется уникальный
+                                идентификатор
+                                устройства.
+                            </div>
+                        </details>
+                        <details class="faq__item">
+                            <summary class="faq__item-title">
+                                Есть ли тестовый период?
+                            </summary>
+                            <div class="faq__item-content">
+                                Да. Бесплатный доступ в течении 14 дней.
+                            </div>
+                        </details>
+                        <details class="faq__item">
+                            <summary class="faq__item-title">
+                                Возможен ли возврат средств?
+                            </summary>
+                            <div class="faq__item-content">
+                                Да. При неудовлетворительной работе в связи со сбоями, не связанные с деятельность
+                                Роскомнадзора,
+                                вернем средства.
+                            </div>
+                        </details>
+                    </div>
+                </div>
+            </section>
+            <section id="download" class="download">
+                <div class="download__container container">
+                    <a href="build.apk" download class="download__link">
+                        <picture>
+                            <source srcset="img/android.webp" type="image/webp"><img src="/img/android.png"
+                                alt="MiiVPN Android">
+                        </picture>
+                    </a>
+                </div>
+            </section>
+        </main>
+    </div>
+    {{template "footer.html"}}
+    {{template "script.html"}}
+</body>
+
+</html>

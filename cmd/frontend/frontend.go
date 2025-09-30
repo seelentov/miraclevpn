@@ -98,9 +98,9 @@ func main() {
 	onlyAuth := r.Group("/user")
 	onlyAuth.Use(middleware.AuthReqFrontend(userRepo))
 	{
-		onlyAuth.GET("/", authCtrl.PostLogin)
+		onlyAuth.GET("/", authCtrl.GetLK)
 		onlyAuth.POST("/payment", payCtrl.PostPayment)
-		onlyAuth.POST("/remove-payment", payCtrl.PostPayment)
+		onlyAuth.POST("/remove-payment", payCtrl.PostRemovePaymentMethod)
 	}
 
 	if err := setupStatic(r); err != nil {

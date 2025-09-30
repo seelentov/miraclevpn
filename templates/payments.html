@@ -1,5 +1,46 @@
-{{define "content"}}
-<main>
-</main>
+<!DOCTYPE html>
+<html lang="ru">
+{{template "head.html"}}
 
-{{end}}
+<body>
+    {{template "header.html"}}
+    <div class="wrapper">
+        <main>
+            <div class="container">
+                <form action="/user/payment" method="post">
+                    <div class="input">
+                        <label for="email">Введите E-mail:</label>
+                        <input placeholder="test@test.com" type="email" id="email" name="email" required />
+                    </div>
+                    <br />
+                    <br />
+                    <p>Выберите план:</p>
+                    <br />
+                    <input placeholder="" id="plan_id" name="plan_id" hidden required />
+                    <div id="plan_id_options" class="options">
+                        {{range $index, $plan := .Plans}}
+                        {{if $plan.Active}}
+                        <div id="plan_id_options-{{$plan.ID}}" class="option block {{if eq $index 0}}active{{end}}"
+                            value="{{$plan.ID}}">
+                            <div class="block__title">
+                                {{$plan.PayDesc}}
+                            </div>
+                            <div class="block__description">
+                                {{printf "%.2f" $plan.Price}} ₽
+                            </div>
+                        </div>
+                        {{end}}
+                        {{end}}
+                    </div>
+                    <div class="center">
+                        <button class="button">Оплатить</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+    {{template "footer.html"}}
+    {{template "script.html"}}
+</body>
+
+</html>

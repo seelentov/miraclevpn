@@ -36,7 +36,7 @@ func NewAuthService(userRepo *repo.UserRepository, authDataRepo *repo.AuthDataRe
 }
 
 func (s *AuthService) Authenticate(uID string, data map[string]interface{}) (string, error) {
-	u, err := s.userRepo.FindByID(uID)
+	_, err := s.userRepo.FindByID(uID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			s.logger.Info("failed to find user by UID, register", zap.String("UID", uID))
@@ -50,16 +50,6 @@ func (s *AuthService) Authenticate(uID string, data map[string]interface{}) (str
 			s.logger.Info("failed to find user by UID", zap.String("UID", uID), zap.Error(err))
 			return "", err
 		}
-	}
-
-	if u != nil && u.Banned {
-		s.logger.Warn("user is banned", zap.String("user_id", uID))
-		return "", ErrBanned
-	}
-
-	if u != nil && u.ExpiredAt.Before(time.Now()) {
-		s.logger.Warn("user expired", zap.String("user_id", uID))
-		return "", ErrExpired
 	}
 
 	if err := s.authDataRepo.Add(

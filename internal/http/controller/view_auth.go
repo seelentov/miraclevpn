@@ -4,6 +4,7 @@ import (
 	"miraclevpn/internal/services/cookie"
 	"miraclevpn/internal/services/user"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -23,10 +24,18 @@ type GetLoginViewModel struct {
 }
 
 func (c *ViewAuthController) GetLogin(ctx *gin.Context) {
+	_, ok := ctx.Get("user_id")
+
+	if ok {
+		ctx.Redirect(http.StatusMovedPermanently, "/user")
+	}
+
 	redirectTo := ctx.Param("redirect_to")
 
 	if redirectTo == "" {
-		redirectTo = "/lk"
+		redirectTo = "/user"
+	} else {
+		redirectTo = strings.ReplaceAll(redirectTo, "%2F", "/")
 	}
 
 	ctx.HTML(http.StatusOK, "login.html", GetLoginViewModel{redirectTo})
@@ -34,24 +43,25 @@ func (c *ViewAuthController) GetLogin(ctx *gin.Context) {
 
 type PostLoginFReq struct {
 	Token      string `form:"token" binding:"required"`
-	RedirectTo string `form:"redirect_to" binding:"required"`
+	RedirectTo string `form:"redirect_to"`
 }
 
 func (c *ViewAuthController) PostLogin(ctx *gin.Context) {
 	var req PostLoginFReq
-	if err := ctx.ShouldBindJSON(&req); err != nil {
+	if err := ctx.ShouldBind(&req); err != nil {
 		panic(err)
 	}
 
 	c.cookieSrv.SetAuth(ctx, req.Token)
 
-	ctx.Redirect(http.StatusOK, req.RedirectTo)
+	ctx.Redirect(http.StatusMovedPermanently, req.RedirectTo)
 }
 
 type GetLKViewModel struct {
-	UserID  string
-	Days    int
-	SubDate *time.Time
+	UserID        string
+	Days          int
+	SubDate       time.Time
+	HavePaymentID bool
 }
 
 func (c *ViewAuthController) GetLK(ctx *gin.Context) {
@@ -64,15 +74,12 @@ func (c *ViewAuthController) GetLK(ctx *gin.Context) {
 
 	days := int(time.Until(user.ExpiredAt).Hours() / 24)
 
-	var subDate *time.Time
-	if user.PaymentID == nil {
-		date := user.ExpiredAt.Add(time.Hour * 24 * -1)
-		subDate = &date
-	}
+	subDate := user.ExpiredAt.Add(time.Hour * 24 * -1)
 
 	ctx.HTML(http.StatusOK, "lk.html", GetLKViewModel{
-		UserID:  user.ID,
-		Days:    days,
-		SubDate: subDate,
+		UserID:        user.ID,
+		Days:          days,
+		SubDate:       subDate,
+		HavePaymentID: user.PaymentID != nil,
 	})
 }

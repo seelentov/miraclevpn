@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ru">
+{{template "head.html"}}
+
+<body>
+    {{template "header.html"}}
+    <div class="wrapper">
+        <main>
+            <div class="container">
+                <form action="/login" method="post">
+                    <div class="input">
+                        <label for="token">Введите ключ:</label>
+                        <input type="password" placeholder="" type="token" id="token" name="token" required />
+                    </div>
+                    <p class="text text-description">UID можно получить в <a href="/build.apk">мобильном приложении</a>.
+                        Вкладка
+                        "Настройки", кнопка "Получить ключ"</p>
+                    <input type="redirect_to" id="redirect_to" name="redirect_to" hidden value="{{.RedirectTo}}" />
+                    <br />
+                    <br />
+                    <div class="center">
+                        <button class="button">Войти</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+    {{template "footer.html"}}
+    {{template "script.html"}}
+</body>
+
+</html>
