@@ -74,7 +74,20 @@ func (r *UserServerRepository) FindExpiredByUser() ([]*models.UserServer, error)
 }
 
 func (r *UserServerRepository) Delete(uss []*models.UserServer) error {
-	return r.db.Delete(uss).Error
+	if len(uss) == 0 {
+		return nil
+	}
+
+	db := r.db
+	for i, us := range uss {
+		if i == 0 {
+			db = db.Where("(user_id = ? AND server_id = ?)", us.UserID, us.ServerID)
+		} else {
+			db = db.Or("(user_id = ? AND server_id = ?)", us.UserID, us.ServerID)
+		}
+	}
+
+	return db.Delete(&models.UserServer{}).Error
 }
 
 func (r *UserServerRepository) FindByConfigFile(configFile string, orExpired bool) (*models.UserServer, error) {

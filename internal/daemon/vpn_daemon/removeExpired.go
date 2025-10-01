@@ -48,6 +48,8 @@ func (d *VpnRemoveExpiredDaemon) Start() {
 						d.logger.Error("ADMIN TG SEND FAILED", zap.Error(err))
 					}
 					d.logger.Error("VPN remove expired daemon failed", zap.Error(err))
+				} else {
+					d.logger.Info("VPN remove expired daemon passed OK")
 				}
 			case <-d.stopChan:
 				d.logger.Info("Stopping VPN remove expired daemon")

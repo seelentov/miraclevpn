@@ -11,5 +11,5 @@ type User struct {
 
 	PaymentID *string `json:"payment_id"`
 
-	Email *string `json:"email"`
+	Email *string `json:"email,omitempty"`
 }
