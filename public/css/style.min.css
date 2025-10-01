@@ -1044,3 +1044,9 @@ hr {
 .button-red {
     background-color: red
 }
+
+.between {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}

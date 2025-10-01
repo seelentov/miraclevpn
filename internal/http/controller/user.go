@@ -39,5 +39,7 @@ func (c *UserController) GetUser(ctx *gin.Context) {
 		u.PaymentID = &t
 	}
 
+	u.Email = nil
+
 	ctx.JSON(http.StatusOK, GetUserRes(u))
 }

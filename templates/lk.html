@@ -9,8 +9,11 @@
             <div class="container center">
                 <div class="block" style="max-width: 320px;">
                     <br />
-                    <div>
+                    <div class="between">
                         <strong>UID аккаунта: </strong> {{.UserID}}
+                        <form class="center" method="post" action="/user/logout">
+                            <button class="button button-mini button-width button-red">Выйти</button>
+                        </form>
                     </div>
                     <div class="days-container">
                         <div class="circle">
