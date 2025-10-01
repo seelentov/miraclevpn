@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"errors"
 	"miraclevpn/internal/models"
 	"time"
 
@@ -29,7 +30,16 @@ func (r *AuthDataRepository) Add(uid string, data map[string]interface{}) error 
 	return nil
 }
 
-func (r *AuthDataRepository) FindSuspicious(hoursInterval int) ([]*models.AuthData, error) {
-	var authData []*models.AuthData
-	return authData, nil
+func (r *AuthDataRepository) FindLatest(userID string) (*models.AuthData, error) {
+	var m models.AuthData
+	err := r.db.Where("uid = ?", userID).Order("date DESC").First(&m).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return &m, nil
 }

@@ -3,6 +3,7 @@ package auth
 
 import (
 	"errors"
+	"fmt"
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/crypt"
 	"time"
@@ -12,8 +13,9 @@ import (
 )
 
 var (
-	ErrBanned  = errors.New("user is banned")
-	ErrExpired = errors.New("user is expired")
+	ErrBanned    = errors.New("user is banned")
+	ErrExpired   = errors.New("user is expired")
+	ErrNewDevice = errors.New("user logged by new device")
 )
 
 type AuthService struct {
@@ -50,6 +52,32 @@ func (s *AuthService) Authenticate(uID string, data map[string]interface{}) (str
 			s.logger.Info("failed to find user by UID", zap.String("UID", uID), zap.Error(err))
 			return "", err
 		}
+	}
+
+	latestAuth, err := s.authDataRepo.FindLatest(uID)
+	if err != nil {
+		return "", err
+	}
+
+	if latestAuth != nil {
+		latestData := latestAuth.Data
+
+		fields := []string{
+			"brand",
+			"designName",
+			"manufacturer",
+			"modelName",
+			"deviceYearClass",
+			"osName",
+			"productName",
+		}
+
+		for _, field := range fields {
+			if data[field] != latestData[field] {
+				return "", fmt.Errorf("%w: %s - %v -> %v", ErrNewDevice, field, latestData, data)
+			}
+		}
+
 	}
 
 	if err := s.authDataRepo.Add(
