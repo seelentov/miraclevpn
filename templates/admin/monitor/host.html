@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Host {{.Host}} - Details</title>
+</head>
+
+<body>
+    <h1>Host: {{.Host}}</h1>
+
+    <div>
+        <h2>Overall Statistics</h2>
+        <p><strong>Total Connections:</strong> {{.Count}}</p>
+        <p><strong>Total Bytes Received:</strong> {{.BytesReceived}}</p>
+        <p><strong>Total Bytes Sent:</strong> {{.BytesSent}}</p>
+    </div>
+
+    <h2>Connected Clients</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Common Name</th>
+                <th>Real Address</th>
+                <th>Bytes Received</th>
+                <th>Bytes Sent</th>
+                <th>Connected Since</th>
+                <th>User ID</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Clients}}
+            <tr>
+                <td>{{.Client.CommonName}}</td>
+                <td>{{.Client.RealAddress}}</td>
+                <td>{{.Client.BytesReceived}}</td>
+                <td>{{.Client.BytesSent}}</td>
+                <td>{{.Client.ConnectedSince}}</td>
+                <td>{{.UserID}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+
+    <br>
+    <a href="/">Back to hosts list</a>
+</body>
+
+</html>

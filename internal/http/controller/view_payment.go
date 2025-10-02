@@ -19,6 +19,7 @@ func NewViewPaymentController(payService *payment.PaymentService, userService *u
 }
 
 type GetPaymentsViewModel struct {
+	ViewBase
 	Plans []*models.PaymentPlan
 }
 
@@ -28,7 +29,9 @@ func (c *ViewPaymentController) GetPayments(ctx *gin.Context) {
 		panic(err)
 	}
 
-	ctx.HTML(http.StatusOK, "payments.html", GetPaymentsViewModel{plans})
+	ctx.HTML(http.StatusOK, "payments.html", GetPaymentsViewModel{
+		Plans: plans,
+	})
 }
 
 type PostPaymentReq struct {

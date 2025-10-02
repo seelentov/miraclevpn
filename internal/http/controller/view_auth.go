@@ -20,6 +20,7 @@ func NewViewAuthController(cookieSrv *cookie.CookieService, userSrv *user.UserSe
 }
 
 type GetLoginViewModel struct {
+	ViewBase
 	RedirectTo string
 }
 
@@ -38,7 +39,9 @@ func (c *ViewAuthController) GetLogin(ctx *gin.Context) {
 		redirectTo = strings.ReplaceAll(redirectTo, "%2F", "/")
 	}
 
-	ctx.HTML(http.StatusOK, "login.html", GetLoginViewModel{redirectTo})
+	ctx.HTML(http.StatusOK, "login.html", GetLoginViewModel{
+		RedirectTo: redirectTo,
+	})
 }
 
 type PostLoginFReq struct {
@@ -58,6 +61,7 @@ func (c *ViewAuthController) PostLogin(ctx *gin.Context) {
 }
 
 type GetLKViewModel struct {
+	ViewBase
 	UserID        string
 	Days          int
 	SubDate       time.Time

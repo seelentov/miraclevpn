@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Host Monitor</title>
+</head>
+
+<body>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>Host</th>
+                <th>Count</th>
+                <th>Bytes Received</th>
+                <th>Bytes Sent</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Hosts}}
+            <tr>
+                <td>
+                    <a href="/{{.Host}}">{{.Host}}</a>
+                </td>
+                <td>{{.Count}}</td>
+                <td>{{.BytesReceived}}</td>
+                <td>{{.BytesSent}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</body>
+
+</html>

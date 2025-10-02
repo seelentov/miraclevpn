@@ -1,14 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"miraclevpn/internal/config/db"
+	"miraclevpn/internal/http/controller"
 	"miraclevpn/internal/repo"
+	"miraclevpn/internal/services/admin"
 	"miraclevpn/pkg/ovpn"
 	"os"
-	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
 
@@ -39,32 +40,20 @@ func main() {
 	serverRepo := repo.NewServerRepository(gormDB)
 	usRepo := repo.NewUserServerRepository(gormDB)
 
-	srvs, err := serverRepo.FindAll()
-	if err != nil {
-		log.Fatal(err)
-	}
+	monitorSrv := admin.NewMonitorService(
+		vpnSrv,
+		usRepo,
+		serverRepo,
+	)
 
-	for {
-		for _, s := range srvs {
-			status, err := vpnSrv.GetStatus(s.Host)
-			if err != nil {
-				fmt.Println(s.Host, "err: ", err)
-			} else {
-				fmt.Println(s.Host, len(status.Clients))
-				for _, c := range status.Clients {
-					us, err := usRepo.FindByConfigFile(c.CommonName, true)
+	monitorCtrl := controller.NewAdminMonitorController(monitorSrv)
 
-					if err != nil || us.UserID == "" {
-						us.UserID = "nil"
-					}
+	r := gin.Default()
+	r.LoadHTMLGlob("templates/admin/monitor/*.html")
+	r.SetTrustedProxies(nil)
 
-					fmt.Printf("CommonName:%s,UserID:%s,RealAddress:%s,BytesReceived:%d,BytesSent:%d,ConnectedSince:%s\n", c.CommonName, us.UserID, c.RealAddress, c.BytesReceived, c.BytesSent, c.ConnectedSince)
-				}
-			}
+	r.GET("/", monitorCtrl.GetIndex)
+	r.GET("/:host", monitorCtrl.GetHost)
 
-			fmt.Println()
-		}
-
-		time.Sleep(1 * time.Second)
-	}
+	r.Run(":" + os.Getenv("PORT_MONITOR"))
 }

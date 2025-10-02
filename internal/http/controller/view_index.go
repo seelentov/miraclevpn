@@ -13,8 +13,16 @@ func NewViewIndexController() *ViewIndexController {
 	return &ViewIndexController{}
 }
 
+type GetIndexViewModel struct {
+	ViewBase
+}
+
 func (c *ViewIndexController) GetIndex(ctx *gin.Context) {
-	ctx.HTML(http.StatusOK, "index.html", nil)
+	ctx.HTML(http.StatusOK, "index.html", GetIndexViewModel{
+		ViewBase: ViewBase{
+			ShowHeaderNav: true,
+		},
+	})
 }
 
 func (c *ViewIndexController) NotFound(ctx *gin.Context) {
