@@ -12,8 +12,9 @@
     <div>
         <h2>Overall Statistics</h2>
         <p><strong>Total Connections:</strong> {{.Count}}</p>
-        <p><strong>Total Bytes Received:</strong> {{.BytesReceived}}</p>
-        <p><strong>Total Bytes Sent:</strong> {{.BytesSent}}</p>
+        <p><strong>Total Received:</strong> {{formatBytes .BytesReceived}}</p>
+        <p><strong>Total Rate:</strong> {{formatBytes .Rate}}</p>
+        <p><strong>Total Sent:</strong> {{formatBytes .BytesSent}}</p>
     </div>
 
     <h2>Connected Clients</h2>
@@ -22,8 +23,10 @@
             <tr>
                 <th>Common Name</th>
                 <th>Real Address</th>
-                <th>Bytes Received</th>
-                <th>Bytes Sent</th>
+                <th>Virtual Address</th>
+                <th>Received</th>
+                <th>Sent</th>
+                <th>Rate</th>
                 <th>Connected Since</th>
                 <th>User ID</th>
             </tr>
@@ -33,8 +36,10 @@
             <tr>
                 <td>{{.Client.CommonName}}</td>
                 <td>{{.Client.RealAddress}}</td>
-                <td>{{.Client.BytesReceived}}</td>
-                <td>{{.Client.BytesSent}}</td>
+                <td>{{.Client.VirtualAddress}}</td>
+                <td>{{formatBytes .Client.BytesReceived}}</td>
+                <td>{{formatBytes .Client.BytesSent}}</td>
+                <td>{{formatBytes .Client.Rate}}</td>
                 <td>{{.Client.ConnectedSince}}</td>
                 <td>{{.UserID}}</td>
             </tr>

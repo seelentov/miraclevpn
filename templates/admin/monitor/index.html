@@ -12,8 +12,9 @@
             <tr>
                 <th>Host</th>
                 <th>Count</th>
-                <th>Bytes Received</th>
-                <th>Bytes Sent</th>
+                <th>Received</th>
+                <th>Sent</th>
+                <th>Rate</th>
             </tr>
         </thead>
         <tbody>
@@ -23,8 +24,9 @@
                     <a href="/{{.Host}}">{{.Host}}</a>
                 </td>
                 <td>{{.Count}}</td>
-                <td>{{.BytesReceived}}</td>
-                <td>{{.BytesSent}}</td>
+                <td>{{formatBytes .BytesReceived}}</td>
+                <td>{{formatBytes .BytesSent}}</td>
+                <td>{{formatBytes .Rate}}</td>
             </tr>
             {{end}}
         </tbody>

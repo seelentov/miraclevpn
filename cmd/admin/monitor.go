@@ -1,11 +1,13 @@
 package main
 
 import (
+	"html/template"
 	"log"
 	"miraclevpn/internal/config/db"
 	"miraclevpn/internal/http/controller"
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/admin"
+	viewutils "miraclevpn/internal/utils/view_utils"
 	"miraclevpn/pkg/ovpn"
 	"os"
 
@@ -49,6 +51,10 @@ func main() {
 	monitorCtrl := controller.NewAdminMonitorController(monitorSrv)
 
 	r := gin.Default()
+	r.SetFuncMap(template.FuncMap{
+		"formatBytes": viewutils.FormatBytes,
+	})
+
 	r.LoadHTMLGlob("templates/admin/monitor/*.html")
 	r.SetTrustedProxies(nil)
 

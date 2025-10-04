@@ -32,6 +32,7 @@ type AGetHostViewModel struct {
 	Count         int
 	BytesReceived int64
 	BytesSent     int64
+	Rate          int64
 	Clients       []*admin.ClientData
 }
 
@@ -41,7 +42,7 @@ func (c *AdminMonitorController) GetHost(ctx *gin.Context) {
 		panic("host is nil")
 	}
 
-	clients, count, bytesReceived, bytesSent, err := c.monitorSrv.GetStatus(host, true)
+	clients, count, bytesReceived, bytesSent, rate, err := c.monitorSrv.GetStatus(host, true)
 	if err != nil {
 		panic(err)
 	}
@@ -52,6 +53,7 @@ func (c *AdminMonitorController) GetHost(ctx *gin.Context) {
 		BytesReceived: bytesReceived,
 		BytesSent:     bytesSent,
 		Clients:       clients,
+		Rate:          rate,
 	})
 
 }

@@ -1,3 +1,4 @@
+// Package admin provides services for administrating
 package admin
 
 import (
@@ -31,10 +32,10 @@ type ClientData struct {
 	UserID string
 }
 
-func (s *MonitorService) GetStatus(host string, getClients bool) (clients []*ClientData, count int, bytesReceived int64, bytesSent int64, err error) {
+func (s *MonitorService) GetStatus(host string, getClients bool) (clients []*ClientData, count int, bytesReceived int64, bytesSent int64, rate int64, err error) {
 	status, err := s.vpnSrv.GetStatus(host)
 	if err != nil {
-		return nil, 0, 0, 0, err
+		return nil, 0, 0, 0, 0, err
 	}
 
 	if getClients {
@@ -44,6 +45,7 @@ func (s *MonitorService) GetStatus(host string, getClients bool) (clients []*Cli
 	count = 0
 	bytesReceived = 0
 	bytesSent = 0
+	rate = 0
 
 	for _, client := range status.Clients {
 		count++
@@ -51,13 +53,19 @@ func (s *MonitorService) GetStatus(host string, getClients bool) (clients []*Cli
 		us, _ := s.usRepo.FindByConfigFile(client.CommonName, true)
 
 		if getClients {
-			clients = append(clients, &ClientData{
+			client := &ClientData{
 				Client: client,
-				UserID: us.UserID,
-			})
+			}
+
+			if us != nil {
+				client.UserID = us.UserID
+			}
+
+			clients = append(clients, client)
 		}
 		bytesReceived += client.BytesReceived
 		bytesSent += client.BytesSent
+		rate += client.Rate
 	}
 
 	if getClients {
@@ -66,7 +74,7 @@ func (s *MonitorService) GetStatus(host string, getClients bool) (clients []*Cli
 		})
 	}
 
-	return clients, count, bytesReceived, bytesSent, nil
+	return clients, count, bytesReceived, bytesSent, rate, nil
 }
 
 type HostData struct {
@@ -74,6 +82,7 @@ type HostData struct {
 	Count         int
 	BytesReceived int64
 	BytesSent     int64
+	Rate          int64
 }
 
 func (s *MonitorService) GetHosts() ([]*HostData, error) {
@@ -97,13 +106,14 @@ func (s *MonitorService) GetHosts() ([]*HostData, error) {
 		go func(host string) {
 			defer wg.Done()
 
-			_, count, bytesReceived, bytesSent, _ := s.GetStatus(host, false)
+			_, count, bytesReceived, bytesSent, rate, _ := s.GetStatus(host, false)
 
 			data := &HostData{
 				Host:          host,
 				Count:         count,
 				BytesReceived: bytesReceived,
 				BytesSent:     bytesSent,
+				Rate:          rate,
 			}
 
 			addRes(data)

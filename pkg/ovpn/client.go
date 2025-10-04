@@ -2,6 +2,7 @@
 package ovpn
 
 import (
+	"bufio"
 	"crypto/rand"
 	"encoding/csv"
 	"fmt"
@@ -103,6 +104,175 @@ func (c *Client) DeleteUser(host string, username string) error {
 	}
 
 	return nil
+}
+
+func (c *Client) GetTraficRates(host string, seconds int) (*vpn.TraficStatus, error) {
+	cmd := doCmd(
+		c.username, host,
+		"sudo", "iftop", "-i", "tun0", "-t", "-s", strconv.Itoa(seconds), "-n", "-N", "-P",
+	)
+
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+
+	return parseTrafficOutput(string(output))
+}
+
+func parseTrafficOutput(output string) (*vpn.TraficStatus, error) {
+	scanner := bufio.NewScanner(strings.NewReader(output))
+	status := &vpn.TraficStatus{
+		Rates: make([]*vpn.TraficRate, 0),
+	}
+
+	var inTable bool
+	var currentHost string
+
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+
+		// Пропускаем пустые строки и разделители
+		if line == "" || strings.HasPrefix(line, "===") || strings.HasPrefix(line, "---") {
+			continue
+		}
+
+		// Проверяем начало таблицы
+		if strings.Contains(line, "Host name") && strings.Contains(line, "last 10s") {
+			inTable = true
+			continue
+		}
+
+		// Парсим строки таблицы
+		if inTable {
+			// Если строка содержит "=>" - это исходящий трафик
+			if strings.Contains(line, "=>") {
+				parts := strings.Fields(line)
+				if len(parts) >= 5 {
+					// Ищем виртуальный адрес вида 10.8.0.x
+					if strings.HasPrefix(parts[0], "10.8.0.") {
+						currentHost = strings.Split(parts[0], ":")[0]
+
+						// Парсим трафик за последние 10 секунд
+						rateStr := parts[3]
+						rate, err := parseRate(rateStr)
+						if err == nil {
+							status.Rates = append(status.Rates, &vpn.TraficRate{
+								VirtualAddress: currentHost,
+								Rate:           rate,
+							})
+						}
+					}
+				}
+			}
+			continue
+		}
+
+		// Парсим итоговые показатели
+		if strings.HasPrefix(line, "Total send rate:") {
+			parts := strings.Fields(line)
+			if len(parts) >= 7 {
+				status.TotalSendRate, _ = parseRate(parts[6]) // last 10s
+			}
+			continue
+		}
+
+		if strings.HasPrefix(line, "Total receive rate:") {
+			parts := strings.Fields(line)
+			if len(parts) >= 7 {
+				status.TotalReceiveRate, _ = parseRate(parts[6]) // last 10s
+			}
+			continue
+		}
+
+		if strings.HasPrefix(line, "Peak rate (sent/received/total):") {
+			parts := strings.Fields(line)
+			if len(parts) >= 7 {
+				status.PeakSendRate, _ = parseRate(parts[5])
+				status.PeakReceiveRate, _ = parseRate(parts[6])
+				status.PeakRate, _ = parseRate(parts[7])
+			}
+			continue
+		}
+
+		if strings.HasPrefix(line, "Cumulative (sent/received/total):") {
+			parts := strings.Fields(line)
+			if len(parts) >= 7 {
+				status.CumulativeSendRate, _ = parseBytes(parts[5])
+				status.CumulativeReceiveRate, _ = parseBytes(parts[6])
+				status.CumulativeRate, _ = parseBytes(parts[7])
+			}
+			continue
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
+	return status, nil
+}
+
+// parseRate парсит строку с rate (например, "1.14Mb", "33.5Kb")
+func parseRate(rateStr string) (int64, error) {
+	rateStr = strings.TrimSpace(rateStr)
+
+	// Если 0b, возвращаем 0
+	if rateStr == "0b" {
+		return 0, nil
+	}
+
+	multiplier := int64(1)
+	if strings.HasSuffix(rateStr, "Kb") {
+		multiplier = 1024
+		rateStr = strings.TrimSuffix(rateStr, "Kb")
+	} else if strings.HasSuffix(rateStr, "Mb") {
+		multiplier = 1024 * 1024
+		rateStr = strings.TrimSuffix(rateStr, "Mb")
+	} else if strings.HasSuffix(rateStr, "Gb") {
+		multiplier = 1024 * 1024 * 1024
+		rateStr = strings.TrimSuffix(rateStr, "Gb")
+	} else if strings.HasSuffix(rateStr, "b") {
+		rateStr = strings.TrimSuffix(rateStr, "b")
+	}
+
+	rate, err := strconv.ParseFloat(rateStr, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return int64(rate * float64(multiplier)), nil
+}
+
+// parseBytes парсит строку с байтами (например, "1.42MB", "41.9KB")
+func parseBytes(bytesStr string) (int64, error) {
+	bytesStr = strings.TrimSpace(bytesStr)
+
+	// Если 0B, возвращаем 0
+	if bytesStr == "0B" {
+		return 0, nil
+	}
+
+	multiplier := int64(1)
+	if strings.HasSuffix(bytesStr, "KB") {
+		multiplier = 1024
+		bytesStr = strings.TrimSuffix(bytesStr, "KB")
+	} else if strings.HasSuffix(bytesStr, "MB") {
+		multiplier = 1024 * 1024
+		bytesStr = strings.TrimSuffix(bytesStr, "MB")
+	} else if strings.HasSuffix(bytesStr, "GB") {
+		multiplier = 1024 * 1024 * 1024
+		bytesStr = strings.TrimSuffix(bytesStr, "GB")
+	} else if strings.HasSuffix(bytesStr, "B") {
+		bytesStr = strings.TrimSuffix(bytesStr, "B")
+	}
+
+	bytes, err := strconv.ParseFloat(bytesStr, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	return int64(bytes * float64(multiplier)), nil
 }
 
 func (c *Client) generateUsername(host string) (string, error) {
@@ -223,6 +393,7 @@ func parseClientRecord(record []string) (*vpn.VpnClient, error) {
 	return &vpn.VpnClient{
 		CommonName:     record[1],
 		RealAddress:    record[2],
+		VirtualAddress: record[3],
 		BytesReceived:  bytesReceived,
 		BytesSent:      bytesSent,
 		ConnectedSince: connectedSince,
