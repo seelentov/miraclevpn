@@ -27,13 +27,12 @@ func (c *AdminMonitorController) GetIndex(ctx *gin.Context) {
 	ctx.HTML(http.StatusOK, "index.html", AGetIndexViewModel{hosts})
 }
 
-type AGetHostViewModel struct {
-	Host          string
-	Count         int
-	BytesReceived int64
-	BytesSent     int64
-	Rate          int64
-	Clients       []*admin.ClientData
+type AGetHostRes struct {
+	Host          string              `json:"host"`
+	Count         int                 `json:"count"`
+	BytesReceived int64               `json:"bytes_received"`
+	BytesSent     int64               `json:"bytes_sent"`
+	Clients       []*admin.ClientData `json:"clients"`
 }
 
 func (c *AdminMonitorController) GetHost(ctx *gin.Context) {
@@ -42,18 +41,24 @@ func (c *AdminMonitorController) GetHost(ctx *gin.Context) {
 		panic("host is nil")
 	}
 
-	clients, count, bytesReceived, bytesSent, rate, err := c.monitorSrv.GetStatus(host, true)
+	clients, count, bytesReceived, bytesSent, err := c.monitorSrv.GetStatus(host, true)
 	if err != nil {
 		panic(err)
 	}
 
-	ctx.HTML(http.StatusOK, "host.html", AGetHostViewModel{
+	json := ctx.Query("json")
+
+	data := AGetHostRes{
 		Host:          host,
 		Count:         count,
 		BytesReceived: bytesReceived,
 		BytesSent:     bytesSent,
 		Clients:       clients,
-		Rate:          rate,
-	})
+	}
 
+	if json == "1" {
+		ctx.JSON(http.StatusOK, data)
+	} else {
+		ctx.HTML(http.StatusOK, "host.html", data)
+	}
 }

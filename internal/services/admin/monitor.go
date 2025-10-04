@@ -32,10 +32,10 @@ type ClientData struct {
 	UserID string
 }
 
-func (s *MonitorService) GetStatus(host string, getClients bool) (clients []*ClientData, count int, bytesReceived int64, bytesSent int64, rate int64, err error) {
+func (s *MonitorService) GetStatus(host string, getClients bool) (clients []*ClientData, count int, bytesReceived int64, bytesSent int64, err error) {
 	status, err := s.vpnSrv.GetStatus(host)
 	if err != nil {
-		return nil, 0, 0, 0, 0, err
+		return nil, 0, 0, 0, err
 	}
 
 	if getClients {
@@ -45,7 +45,6 @@ func (s *MonitorService) GetStatus(host string, getClients bool) (clients []*Cli
 	count = 0
 	bytesReceived = 0
 	bytesSent = 0
-	rate = 0
 
 	for _, client := range status.Clients {
 		count++
@@ -65,7 +64,6 @@ func (s *MonitorService) GetStatus(host string, getClients bool) (clients []*Cli
 		}
 		bytesReceived += client.BytesReceived
 		bytesSent += client.BytesSent
-		rate += client.Rate
 	}
 
 	if getClients {
@@ -74,7 +72,7 @@ func (s *MonitorService) GetStatus(host string, getClients bool) (clients []*Cli
 		})
 	}
 
-	return clients, count, bytesReceived, bytesSent, rate, nil
+	return clients, count, bytesReceived, bytesSent, nil
 }
 
 type HostData struct {
@@ -106,14 +104,13 @@ func (s *MonitorService) GetHosts() ([]*HostData, error) {
 		go func(host string) {
 			defer wg.Done()
 
-			_, count, bytesReceived, bytesSent, rate, _ := s.GetStatus(host, false)
+			_, count, bytesReceived, bytesSent, _ := s.GetStatus(host, false)
 
 			data := &HostData{
 				Host:          host,
 				Count:         count,
 				BytesReceived: bytesReceived,
 				BytesSent:     bytesSent,
-				Rate:          rate,
 			}
 
 			addRes(data)

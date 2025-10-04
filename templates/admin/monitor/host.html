@@ -26,22 +26,24 @@
                 <th>Virtual Address</th>
                 <th>Received</th>
                 <th>Sent</th>
-                <th>Rate</th>
+                <th>Rate Received</th>
+                <th>Rate Sent</th>
                 <th>Connected Since</th>
                 <th>User ID</th>
             </tr>
         </thead>
         <tbody>
             {{range .Clients}}
-            <tr>
-                <td>{{.Client.CommonName}}</td>
-                <td>{{.Client.RealAddress}}</td>
-                <td>{{.Client.VirtualAddress}}</td>
-                <td>{{formatBytes .Client.BytesReceived}}</td>
-                <td>{{formatBytes .Client.BytesSent}}</td>
-                <td>{{formatBytes .Client.Rate}}</td>
-                <td>{{.Client.ConnectedSince}}</td>
-                <td>{{.UserID}}</td>
+            <tr id="{{.Client.CommonName}}">
+                <td key="common_name">{{.Client.CommonName}}</td>
+                <td key="real_address">{{.Client.RealAddress}}</td>
+                <td key="virtual_address">{{.Client.VirtualAddress}}</td>
+                <td key="bytes_received">{{formatBytes .Client.BytesReceived}}</td>
+                <td key="bytes_sent">{{formatBytes .Client.BytesSent}}</td>
+                <td key="rate_received"></td>
+                <td key="rate_sent"></td>
+                <td key="connected_since">{{.Client.ConnectedSince}}</td>
+                <td key="user_id">{{.UserID}}</td>
             </tr>
             {{end}}
         </tbody>
@@ -50,5 +52,40 @@
     <br>
     <a href="/">Back to hosts list</a>
 </body>
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        const fields = [
+            "common_name",
+            "real_address",
+            "virtual_address",
+            "bytes_received",
+            "bytes_sent",
+            "connected_since",
+            "user_id"
+        ]
+
+        setInterval(async () => {
+            const response = await fetch('/host/(host)?json=1');
+            const data = await response.json();
+
+            data.clients.forEach(client => {
+                const clientRow = document.querySelector("#" + client.common_name)
+
+                fields.forEach(field => {
+                    clientRow.querySelector(`[key="${field}"]`).textContent = client[field]
+                })
+
+                const prevReceivedC = clientRow.querySelector(`[key="bytes_received"]`).textContent
+                const prevSentC = clientRow.querySelector(`[key="bytes_sent"]`).textContent
+
+                const prevReceived = prevReceivedC === "" ? 0 : client.bytes_received - Number(prevReceivedC)
+                const prevSent = prevSentC === "" ? 0 : client.bytes_sent - Number(prevSentC)
+
+                clientRow.querySelector(`[key="rate_received"]`).textContent = prevReceived
+                clientRow.querySelector(`[key="rate_sent"]`).textContent = prevSent
+            });
+        }, 5000)
+    })
+</script>
 
 </html>
