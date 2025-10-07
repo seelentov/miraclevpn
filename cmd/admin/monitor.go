@@ -4,7 +4,7 @@ import (
 	"html/template"
 	"log"
 	"miraclevpn/internal/config/db"
-	"miraclevpn/internal/http/controller"
+	"miraclevpn/internal/controller/http/controller"
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/admin"
 	viewutils "miraclevpn/internal/utils/view_utils"

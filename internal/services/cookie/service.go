@@ -1,3 +1,4 @@
+// Package cookie provides cookie logic
 package cookie
 
 import (
@@ -6,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-var AUTH_COOKIE = "auth"
+var AuthCookie = "auth"
 
 type CookieService struct {
 	domain string
@@ -17,13 +18,13 @@ func NewCookieService(domain string) *CookieService {
 }
 
 func (s *CookieService) SetAuth(ctx *gin.Context, token string) {
-	ctx.SetCookie(AUTH_COOKIE, token, int(time.Now().Add(time.Hour).Unix()), "/", s.domain, false, true)
+	ctx.SetCookie(AuthCookie, token, int(time.Now().Add(time.Hour).Unix()), "/", s.domain, false, true)
 }
 
 func (s *CookieService) RemoveAuth(ctx *gin.Context) {
-	ctx.SetCookie(AUTH_COOKIE, "", -1, "/", s.domain, false, true)
+	ctx.SetCookie(AuthCookie, "", -1, "/", s.domain, false, true)
 }
 
 func (s *CookieService) GetAuth(ctx *gin.Context) (string, error) {
-	return ctx.Cookie(AUTH_COOKIE)
+	return ctx.Cookie(AuthCookie)
 }

@@ -1,3 +1,4 @@
+// Package serverdaemon provides server daemons
 package serverdaemon
 
 import (

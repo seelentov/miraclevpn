@@ -47,6 +47,10 @@ func (s *ServersService) GetAllServers() ([]*models.Server, error) {
 	return servers, nil
 }
 
+func (s *ServersService) GetBest() ([]*models.Server, error) {
+	return s.srvRepo.FindBest()
+}
+
 func (s *ServersService) GetServersByRegion(region string) ([]*models.Server, error) {
 	s.logger.Debug("getting servers by region", zap.String("region", region))
 	servers, err := s.srvRepo.FindByRegion(region)

@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	"miraclevpn/internal/http/controller"
+	"miraclevpn/internal/controller/http/controller"
 	"os"
 	"path/filepath"
 	"strings"

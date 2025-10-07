@@ -37,7 +37,7 @@ func NewAuthService(userRepo *repo.UserRepository, authDataRepo *repo.AuthDataRe
 	}
 }
 
-func (s *AuthService) Authenticate(uID string, data map[string]interface{}) (string, error) {
+func (s *AuthService) Authenticate(uID string, data map[string]interface{}, saveAuthData bool) (string, error) {
 	_, err := s.userRepo.FindByID(uID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -54,37 +54,39 @@ func (s *AuthService) Authenticate(uID string, data map[string]interface{}) (str
 		}
 	}
 
-	latestAuth, err := s.authDataRepo.FindLatest(uID)
-	if err != nil {
-		return "", err
-	}
-
-	if latestAuth != nil {
-		latestData := latestAuth.Data
-
-		fields := []string{
-			"brand",
-			"designName",
-			"manufacturer",
-			"modelName",
-			"deviceYearClass",
-			"osName",
-			"productName",
+	if saveAuthData {
+		latestAuth, err := s.authDataRepo.FindLatest(uID)
+		if err != nil {
+			return "", err
 		}
 
-		for _, field := range fields {
-			if data[field] != latestData[field] {
-				return "", fmt.Errorf("%w: %s - %v -> %v", ErrNewDevice, field, latestData, data)
+		if latestAuth != nil {
+			latestData := latestAuth.Data
+
+			fields := []string{
+				"brand",
+				"designName",
+				"manufacturer",
+				"modelName",
+				"deviceYearClass",
+				"osName",
+				"productName",
 			}
+
+			for _, field := range fields {
+				if data[field] != latestData[field] {
+					return "", fmt.Errorf("%w: %s - %v -> %v", ErrNewDevice, field, latestData, data)
+				}
+			}
+
 		}
 
-	}
-
-	if err := s.authDataRepo.Add(
-		uID,
-		data,
-	); err != nil {
-		return "", err
+		if err := s.authDataRepo.Add(
+			uID,
+			data,
+		); err != nil {
+			return "", err
+		}
 	}
 
 	token, err := s.jwtService.GenerateToken(map[string]string{

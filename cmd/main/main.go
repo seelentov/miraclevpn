@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"math"
-	"miraclevpn/internal/http/middleware"
 	"os"
 	"strconv"
 	"strings"
@@ -11,7 +10,8 @@ import (
 
 	"miraclevpn/internal/config/db"
 	"miraclevpn/internal/config/logg"
-	"miraclevpn/internal/http/controller"
+	"miraclevpn/internal/controller/http/controller"
+	"miraclevpn/internal/controller/http/middleware"
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/auth"
 	"miraclevpn/internal/services/crypt"

@@ -31,6 +31,27 @@ func (r *ServerRepository) FindAll() ([]*models.Server, error) {
 	return s, nil
 }
 
+func (r *ServerRepository) FindBest() ([]*models.Server, error) {
+	var s []*models.Server
+
+	subquery := r.db.Model(&models.Server{}).
+		Select("region, MAX(priority) as max_priority").
+		Where("active = ? AND preview = ?", true, false).
+		Group("region")
+
+	err := r.db.
+		Joins("INNER JOIN (?) as mp ON servers.region = mp.region AND servers.priority = mp.max_priority", subquery).
+		Where("servers.active = ?", true).
+		Order("servers.region").
+		Find(&s).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return s, nil
+}
+
 func (r *ServerRepository) FindByRegion(region string) ([]*models.Server, error) {
 	var s []*models.Server
 	if err := r.db.Where("region = ? AND active = ? AND preview = ?", region, true, false).Order("priority DESC").Find(&s).Error; err != nil {
