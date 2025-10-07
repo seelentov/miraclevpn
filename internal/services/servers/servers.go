@@ -219,6 +219,14 @@ func (s *ServersService) UpdateExpired(expiration time.Duration) error {
 					zap.Error(err))
 				return err
 			}
+
+			if err := s.vpnService.KickUser(srv.Host, *(us.ConfigFileExpired)); err != nil {
+				s.logger.Error("failed to kick VPN user",
+					zap.String("host", srv.Host),
+					zap.String("userID", usr.ID),
+					zap.Error(err))
+				return err
+			}
 		}
 
 		s.logger.Info("creating new VPN user",
@@ -276,8 +284,16 @@ func (s *ServersService) RemoveExpiredByUser() error {
 			return err
 		}
 
+		if err := s.vpnService.KickUser(ser.Host, e.ConfigFile); err != nil {
+			return err
+		}
+
 		if e.ConfigFileExpired != nil {
 			if err := s.vpnService.DeleteUser(ser.Host, *(e.ConfigFileExpired)); err != nil {
+				return err
+			}
+
+			if err := s.vpnService.KickUser(ser.Host, *(e.ConfigFileExpired)); err != nil {
 				return err
 			}
 		}

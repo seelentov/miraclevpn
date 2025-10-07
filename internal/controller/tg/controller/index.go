@@ -45,6 +45,9 @@ func (c *IndexTGController) Index(bot *tgbotapi.BotAPI, data map[string]interfac
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("🔑 Получить ключ", fmt.Sprintf("/get_key:%v", chatID)),
 		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonURL("❓ Поддержка", "https://t.me/miivpn_support"),
+		),
 	)
 
 	msg := tgbotapi.NewMessage(chatID, text)

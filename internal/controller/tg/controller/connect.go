@@ -2,9 +2,11 @@ package controller
 
 import (
 	"fmt"
+	"miraclevpn/internal/models"
 	"miraclevpn/internal/services/servers"
 	"strconv"
 	"strings"
+	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -39,7 +41,7 @@ func (c *ConnectTGController) Index(bot *tgbotapi.BotAPI, data map[string]interf
 
 	rows = append(rows,
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🌍 Все сервера", fmt.Sprintf("/servers_all:%v", chatID)),
+			tgbotapi.NewInlineKeyboardButtonData("🌍 Список серверов", fmt.Sprintf("/servers_all:%v", chatID)),
 		),
 	)
 
@@ -71,6 +73,24 @@ func (c *ConnectTGController) GetConfig(bot *tgbotapi.BotAPI, data map[string]in
 		panic(err)
 	}
 
+	u := data["user"].(*models.User)
+
+	if u.ExpiredAt.Before(time.Now()) {
+		bot.Send(tgbotapi.NewMessage(chatID, "⚠️ Подписка истекла"))
+		return
+	}
+
+	if u.Banned {
+		bot.Send(tgbotapi.NewMessage(chatID, "⚠️ Аккаунт заблокирован"))
+
+		return
+	}
+
+	if !u.Active {
+		bot.Send(tgbotapi.NewMessage(chatID, "⚠️ Аккаунт деактивирован"))
+		return
+	}
+
 	server, err := c.srv.GetServerByID(serverID)
 	if err != nil {
 		panic(err)
@@ -85,18 +105,16 @@ func (c *ConnectTGController) GetConfig(bot *tgbotapi.BotAPI, data map[string]in
 		panic(err)
 	}
 
-	text := fmt.Sprintf("⏳ *Подключаемся к %s...*\n\n"+
-		"📖 *Простая инструкция:*\n\n"+
-		"1️⃣ *Скачайте приложение* OpenVPN Connect, если у вас его еще нет:\n"+
-		"   - [Скачать для iOS](https://apps.apple.com/app/openvpn-connect/id590379981)\n"+
-		"   - [Скачать для Android](https://play.google.com/store/apps/details?id=net.openvpn.openvpn)\n"+
-		"   - [Скачать для ПК](https://openvpn.net/client)\n\n"+
-		"2️⃣ *Используйте конфигурационный файл в приложении:*\n"+
-		"   📎 `config.ovpn`\n\n"+
-		"3️⃣ *Приложение откроется — подтвердите подключение.*\n\n"+
-		"⚠️ *Важно!*\n"+
-		"- Этот файл **одноразовый**.\n"+
-		"- Если соединение прервалось, просто вернитесь сюда и скачайте новый.",
+	text := fmt.Sprintf("⏳ *Подключаемся к %s...*\n\n" +
+		"📖 *Простая инструкция:*\n\n" +
+		"1️⃣ *Скачайте приложение* OpenVPN Connect, если у вас его еще нет:\n" +
+		"   - [Скачать для iOS](https://apps.apple.com/app/openvpn-connect/id590379981)\n" +
+		"   - [Скачать для Android](https://play.google.com/store/apps/details?id=net.openvpn.openvpn)\n" +
+		"   - [Скачать для ПК](https://openvpn.net/client)\n\n" +
+		"2️⃣ *Используйте конфигурационный файл (config.ovpn) в приложении*\n\n" +
+		"⚠️ *Важно!*\n" +
+		"- Этот файл **одноразовый**.\n" +
+		"- Для получения нового файла нажмите **Обновить**.\n" +
 		server.RegionName)
 
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(

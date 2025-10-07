@@ -132,6 +132,36 @@ func (c *Client) GetRate(host string, address string, sec int) (int64, int64, er
 	return peakSent, peakReceived, nil
 }
 
+func (c *Client) GetAllRate(host string, sec int) ([]*vpn.TraficStatus, error) {
+	cmd := doCmd(
+		c.username, host,
+		"sudo", "iftop", "-i", "tun0", "-t", "-s", strconv.Itoa(sec), "-n", "-N", "-P",
+	)
+
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, fmt.Errorf("get rate (%s) failed: %v, output: %s",
+			host, err, string(output))
+	}
+
+	return parseIfTop(string(output))
+}
+
+func (c *Client) KickUser(host string, username string) error {
+	cmd := doCmd(
+		c.username, host,
+		"echo", "kill "+username, "|", "nc", "-q", "0", "localhost", "7505",
+	)
+
+	output, err := cmd.Output()
+	if err != nil {
+		return fmt.Errorf("kick user (%s) rate failed: %v, output: %s",
+			username+":"+host, err, string(output))
+	}
+
+	return nil
+}
+
 func parseIfTopOneClient(input string) (int64, int64) {
 	re := regexp.MustCompile(`Peak rate \(sent/received/total\):\s+(\S+)\s+(\S+)\s+(\S+)`)
 
@@ -154,6 +184,10 @@ func parseIfTopOneClient(input string) (int64, int64) {
 	}
 
 	return peakSent, peakReceived
+}
+
+func parseIfTop(input string) ([]*vpn.TraficStatus, error) {
+	panic("not implemented")
 }
 
 func parseToBytes(valueStr string) int64 {

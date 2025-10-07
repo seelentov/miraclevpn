@@ -50,7 +50,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Подключение к БД PostgreSQL
 	gormDB, err := db.NewPostgreConn(dbHost, dbUser, dbPass, dbName, dbPort, dbSsl, dbTZ, "MIIVPN_VPNDAEMON")
 	if err != nil {
 		logger.Logger.Fatal("failed to connect to db", zap.Error(err))
@@ -103,6 +102,10 @@ func main() {
 	vpnRemoveExpiredDaemon := vpndaemon.NewVpnRemoveExpiredDaemon(time.Second*time.Duration(vpnRemoveExpiredInterval), logger.Logger, serversSrv, tgSenderHealthCheck, tgChatIDHealthCheck)
 	vpnRemoveExpiredDaemon.Start()
 	defer vpnRemoveExpiredDaemon.Stop()
+
+	vpnKickHighloadDaemon := vpndaemon.NewKickHighloadDaemon(time.Second*time.Duration(vpnRemoveExpiredInterval), logger.Logger, serversSrv, vpnSrv, tgSenderHealthCheck, tgChatIDHealthCheck, time.Second*10, 1024*1024*20)
+	vpnKickHighloadDaemon.Start()
+	defer vpnKickHighloadDaemon.Stop()
 
 	select {}
 }

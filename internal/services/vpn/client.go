@@ -1,7 +1,9 @@
 // Package vpn provides VPN management services for the application.
 package vpn
 
-import "time"
+import (
+	"time"
+)
 
 type VpnClient struct {
 	CommonName     string    `json:"common_name"`
@@ -18,14 +20,10 @@ type Status struct {
 }
 
 type TraficStatus struct {
-	TotalSendRate         int64 //Total send rate last 10 sec
-	TotalReceiveRate      int64 //Total receive rate last 10 sec
-	PeakSendRate          int64
-	PeakReceiveRate       int64
-	PeakRate              int64 // Total
-	CumulativeSendRate    int64
-	CumulativeReceiveRate int64
-	CumulativeRate        int64 // Total
+	ClientName    string
+	BytesSend     int64
+	BytesReceived int64
+	Service       string
 }
 
 type VpnService interface {
@@ -33,4 +31,6 @@ type VpnService interface {
 	CreateUser(host string) (config string, filename string, err error)
 	DeleteUser(host string, username string) error
 	GetRate(host string, address string, sec int) (int64, int64, error)
+	KickUser(host string, username string) error
+	GetAllRate(host string, sec int) ([]*TraficStatus, error)
 }
