@@ -168,16 +168,17 @@ func (c *ConnectTGController) GetStats(bot *tgbotapi.BotAPI, data map[string]int
 	for _, srv := range servers {
 		server, currentUsersCount, err := c.srv.GetServerStatus(srv.ID)
 		if err != nil {
-			textB.WriteString(server.RegionName)
-			textB.WriteString(" ")
-			textB.WriteString(server.Host)
-			textB.WriteString(" - ")
-			textB.WriteString(strconv.Itoa(currentUsersCount))
-			textB.WriteString("/")
-			textB.WriteString(strconv.Itoa(server.MaxUsers))
-			textB.WriteString("\n")
 			continue
 		}
+
+		textB.WriteString(server.RegionName)
+		textB.WriteString(" ")
+		textB.WriteString(server.Host)
+		textB.WriteString(" - ")
+		textB.WriteString(strconv.Itoa(currentUsersCount))
+		textB.WriteString("/")
+		textB.WriteString(strconv.Itoa(server.MaxUsers))
+		textB.WriteString("\n")
 	}
 
 	msg := tgbotapi.NewMessage(chatID, textB.String())
