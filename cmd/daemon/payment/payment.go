@@ -33,7 +33,7 @@ func main() {
 
 	tgTokenHealthCheck := os.Getenv("TG_HEALTHCHECK_TOKEN")
 	tgChatIDHealthCheck := os.Getenv("TG_HEALTHCHECK_CHAT_ID")
-	tgSenderHealthCheck := tg.NewTgClient(tgTokenHealthCheck, "")
+	tgSenderHealthCheck := tg.NewClient(tgTokenHealthCheck, "")
 
 	paymentRemoveExpiredIntervalStr := os.Getenv("PAYMENT_REMOVE_EXPIRED_INTERVAL_SEC")
 	paymentRemoveExpiredInterval, err := strconv.Atoi(paymentRemoveExpiredIntervalStr)

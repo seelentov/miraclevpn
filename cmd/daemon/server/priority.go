@@ -32,7 +32,7 @@ func main() {
 
 	tgTokenHealthCheck := os.Getenv("TG_HEALTHCHECK_TOKEN")
 	tgChatIDHealthCheck := os.Getenv("TG_HEALTHCHECK_CHAT_ID")
-	tgSenderHealthCheck := tg.NewTgClient(tgTokenHealthCheck, "")
+	tgSenderHealthCheck := tg.NewClient(tgTokenHealthCheck, "")
 
 	serverAutoPriorityIntervalStr := os.Getenv("SERVER_AUTO_PRIORITY_INTERVAL_SEC")
 	serverAutoPriorityInterval, err := strconv.Atoi(serverAutoPriorityIntervalStr)

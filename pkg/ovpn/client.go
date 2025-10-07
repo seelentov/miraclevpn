@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"miraclevpn/internal/services/vpn"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -55,19 +56,14 @@ func (c *Client) GetStatus(host string) (*vpn.Status, error) {
 	return status, nil
 }
 
-func (c *Client) CreateUser(host string) (config string, filename string, err error) {
-	username, err := c.generateUsername(host)
-	if err != nil {
-		return "", "", err
-	}
-
+func (c *Client) CreateUserU(host string, username string) (config string, err error) {
 	cmd := doCmd(
 		c.username, host,
 		"sudo", c.createUserFile, username,
 	)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", "", fmt.Errorf("create user failed: %v, output: %s", err, string(output))
+		return "", fmt.Errorf("create user failed: %v, output: %s", err, string(output))
 	}
 
 	cmd = doCmd(
@@ -77,10 +73,24 @@ func (c *Client) CreateUser(host string) (config string, filename string, err er
 
 	output, err = cmd.CombinedOutput()
 	if err != nil {
-		return "", "", fmt.Errorf("failed to get ovpn file after creation: %v, output: %s", err, string(output))
+		return "", fmt.Errorf("failed to get ovpn file after creation: %v, output: %s", err, string(output))
 	}
 
-	return string(output), username, nil
+	return string(output), nil
+}
+
+func (c *Client) CreateUser(host string) (config string, filename string, err error) {
+	username, err := c.generateUsername(host)
+	if err != nil {
+		return "", "", err
+	}
+
+	config, err = c.CreateUserU(host, username)
+	if err != nil {
+		return "", "", err
+	}
+
+	return config, username, nil
 }
 
 func (c *Client) DeleteUser(host string, username string) error {
@@ -103,6 +113,93 @@ func (c *Client) DeleteUser(host string, username string) error {
 	}
 
 	return nil
+}
+
+func (c *Client) GetRate(host string, address string, sec int) (int64, int64, error) {
+	cmd := doCmd(
+		c.username, host,
+		"sudo", "iftop", "-i", "tun0", "-t", "-s", strconv.Itoa(sec), "-n", "-N", "-P", "-f", "'host "+address+"'",
+	)
+
+	output, err := cmd.Output()
+	if err != nil {
+		return 0, 0, fmt.Errorf("get user (%s) rate failed: %v, output: %s",
+			host+":"+address, err, string(output))
+	}
+
+	peakSent, peakReceived := parseIfTopOneClient(string(output))
+
+	return peakSent, peakReceived, nil
+}
+
+func parseIfTopOneClient(input string) (int64, int64) {
+	re := regexp.MustCompile(`Peak rate \(sent/received/total\):\s+(\S+)\s+(\S+)\s+(\S+)`)
+
+	var peakSent int64 = 0
+	var peakReceived int64 = 0
+	lines := strings.Split(input, "\n")
+	for _, line := range lines {
+		if strings.Contains(line, "Peak rate (sent/received/total)") {
+			matches := re.FindStringSubmatch(line)
+			if matches != nil {
+				peakSentStr := matches[1]
+				peakReceivedStr := matches[2]
+
+				peakSent = parseToBytes(peakSentStr)
+				peakReceived = parseToBytes(peakReceivedStr)
+
+				break
+			}
+		}
+	}
+
+	return peakSent, peakReceived
+}
+
+func parseToBytes(valueStr string) int64 {
+	if valueStr == "0b" || valueStr == "0B" {
+		return 0
+	}
+
+	// Регулярное выражение для разделения числа и единицы измерения
+	re := regexp.MustCompile(`^([0-9.]+)([KMGT]?[bB])$`)
+	matches := re.FindStringSubmatch(valueStr)
+	if matches == nil {
+		return 0
+	}
+
+	numberStr := matches[1]
+	unit := matches[2]
+
+	// Парсим число
+	value, err := strconv.ParseFloat(numberStr, 64)
+	if err != nil {
+		return 0
+	}
+
+	// Преобразуем в байты в зависимости от единицы измерения
+	switch strings.ToUpper(unit) {
+	case "B":
+		return int64(value)
+	case "KB":
+		return int64(value * 1024)
+	case "MB":
+		return int64(value * 1024 * 1024)
+	case "GB":
+		return int64(value * 1024 * 1024 * 1024)
+	case "TB":
+		return int64(value * 1024 * 1024 * 1024 * 1024)
+	case "Kb":
+		return int64(value * 1024 / 8)
+	case "Mb":
+		return int64(value * 1024 * 1024 / 8)
+	case "Gb":
+		return int64(value * 1024 * 1024 * 1024 / 8)
+	case "Tb":
+		return int64(value * 1024 * 1024 * 1024 * 1024 / 8)
+	default:
+		return 0
+	}
 }
 
 func (c *Client) generateUsername(host string) (string, error) {

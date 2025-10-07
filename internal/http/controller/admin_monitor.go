@@ -62,3 +62,49 @@ func (c *AdminMonitorController) GetHost(ctx *gin.Context) {
 		ctx.HTML(http.StatusOK, "host.html", data)
 	}
 }
+
+type GetRateRes struct {
+	Sent     int64 `json:"sent"`
+	Received int64 `json:"received"`
+}
+
+func (c *AdminMonitorController) GetRate(ctx *gin.Context) {
+	host := ctx.Param("host")
+	ip := ctx.Param("ip")
+
+	if host == "" || ip == "" {
+		panic("host or ip empty")
+	}
+
+	sent, received, err := c.monitorSrv.GetRate(host, ip)
+	if err != nil {
+		panic(err)
+	}
+
+	ctx.JSON(http.StatusOK, GetRateRes{
+		Sent:     sent,
+		Received: received,
+	})
+}
+
+type PostRemoveReq struct {
+	ConfigFile string `form:"config_file" binding:"required"`
+}
+
+func (c *AdminMonitorController) PostRemoveConfig(ctx *gin.Context) {
+	var req PostPaymentReq
+	if err := ctx.ShouldBind(&req); err != nil {
+		panic(err)
+	}
+}
+
+type PostBanReq struct {
+	UserID string `form:"user_id" binding:"required"`
+}
+
+func (c *AdminMonitorController) PostBan(ctx *gin.Context) {
+	var req PostPaymentReq
+	if err := ctx.ShouldBind(&req); err != nil {
+		panic(err)
+	}
+}

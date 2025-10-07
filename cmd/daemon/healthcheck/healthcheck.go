@@ -32,7 +32,7 @@ func main() {
 
 	tgTokenHealthCheck := os.Getenv("TG_HEALTHCHECK_TOKEN")
 	tgChatIDHealthCheck := os.Getenv("TG_HEALTHCHECK_CHAT_ID")
-	tgSenderHealthCheck := tg.NewTgClient(tgTokenHealthCheck, "")
+	tgSenderHealthCheck := tg.NewClient(tgTokenHealthCheck, "")
 
 	sshUser := os.Getenv("SSH_USER")
 	sshStatusPath := os.Getenv("SSH_STATUS_PATH")

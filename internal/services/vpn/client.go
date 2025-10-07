@@ -32,4 +32,5 @@ type VpnService interface {
 	GetStatus(host string) (*Status, error)
 	CreateUser(host string) (config string, filename string, err error)
 	DeleteUser(host string, username string) error
+	GetRate(host string, address string, sec int) (int64, int64, error)
 }

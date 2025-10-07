@@ -60,6 +60,7 @@ func main() {
 
 	r.GET("/", monitorCtrl.GetIndex)
 	r.GET("/:host", monitorCtrl.GetHost)
+	r.GET("/rate/:host/:ip", monitorCtrl.GetRate)
 
 	r.Run(":" + os.Getenv("PORT_MONITOR"))
 }

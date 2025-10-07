@@ -92,7 +92,7 @@ func main() {
 
 	tgTokenHealthCheck := os.Getenv("TG_HEALTHCHECK_TOKEN")
 	tgChatIDHealthCheck := os.Getenv("TG_HEALTHCHECK_CHAT_ID")
-	tgSenderHealthCheck := tg.NewTgClient(tgTokenHealthCheck, "")
+	tgSenderHealthCheck := tg.NewClient(tgTokenHealthCheck, "")
 
 	serversSrv := servers.NewServersService(userServerRepo, serverRepo, userRepo, vpnSrv, logger.Logger)
 

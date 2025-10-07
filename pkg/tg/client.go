@@ -13,21 +13,21 @@ var (
 	ErrRequest = errors.New("request error")
 )
 
-type TgClient struct {
+type Client struct {
 	token  string
 	name   string
 	client *http.Client
 }
 
-func NewTgClient(token string, name string) *TgClient {
-	return &TgClient{
+func NewClient(token string, name string) *Client {
+	return &Client{
 		token,
 		name,
 		&http.Client{},
 	}
 }
 
-func (c *TgClient) SendMessage(to string, message string) error {
+func (c *Client) SendMessage(to string, message string) error {
 	resp, err := http.Get(fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage?chat_id=%s&text=%s", c.token, to, strings.ReplaceAll(message, " ", "+")))
 	if err != nil {
 		return err
@@ -42,11 +42,11 @@ func (c *TgClient) SendMessage(to string, message string) error {
 	return nil
 }
 
-func (c *TgClient) GetName() string {
+func (c *Client) GetName() string {
 	return c.name
 }
 
-func (c *TgClient) GetStatus() (bool, error) {
+func (c *Client) GetStatus() (bool, error) {
 	resp, err := http.Get(fmt.Sprintf("https://api.telegram.org/bot%s/getMe", c.token))
 	if err != nil {
 		return false, err

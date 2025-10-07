@@ -28,8 +28,8 @@ func NewMonitorService(
 }
 
 type ClientData struct {
-	Client *vpn.VpnClient
-	UserID string
+	Client *vpn.VpnClient `json:"client"`
+	UserID string         `json:"user_id"`
 }
 
 func (s *MonitorService) GetStatus(host string, getClients bool) (clients []*ClientData, count int, bytesReceived int64, bytesSent int64, err error) {
@@ -119,4 +119,8 @@ func (s *MonitorService) GetHosts() ([]*HostData, error) {
 	wg.Wait()
 
 	return res, nil
+}
+
+func (s *MonitorService) GetRate(host, ip string) (int64, int64, error) {
+	return s.vpnSrv.GetRate(host, ip, 5)
 }
