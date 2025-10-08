@@ -363,7 +363,11 @@
     cursor: pointer;
     display: block;
     -webkit-transition: all .2s ease-in-out;
-    transition: all .2s ease-in-out
+    transition: all .2s ease-in-out;
+    -webkit-box-shadow: 4px 4px 8px 0px rgba(34, 60, 80, 0.2);
+    -moz-box-shadow: 4px 4px 8px 0px rgba(34, 60, 80, 0.2);
+    box-shadow: 4px 4px 8px 0px rgba(34, 60, 80, 0.2);
+    border-radius: 13px;
 }
 
 .download__link:hover {
@@ -396,10 +400,16 @@
     -webkit-transition: all .1s ease-in;
     transition: all .1s ease-in;
     text-align: center;
+    -webkit-box-shadow: 4px 4px 8px 0px rgba(34, 60, 80, 0.2);
+    -moz-box-shadow: 4px 4px 8px 0px rgba(34, 60, 80, 0.2);
+    box-shadow: 4px 4px 8px 0px rgba(34, 60, 80, 0.2);
 }
 
 .button.button-mini {
     padding: 5px 10px !important;
+    -webkit-box-shadow: unset;
+    -moz-box-shadow: unset;
+    box-shadow: unset;
 }
 
 .button:hover {
@@ -934,12 +944,12 @@ h6 {
 }
 
 .block {
-    border-width: 1px;
-    border-style: solid;
-    border-color: black;
     padding: 10px 30px;
     margin-bottom: 10px;
     border-radius: 10px;
+    -webkit-box-shadow: 4px 4px 8px 0px rgba(34, 60, 80, 0.2);
+    -moz-box-shadow: 4px 4px 8px 0px rgba(34, 60, 80, 0.2);
+    box-shadow: 4px 4px 8px 0px rgba(34, 60, 80, 0.2);
 }
 
 .block__title {}
@@ -1096,4 +1106,62 @@ hr {
 
 .owl-stage-outer {
     overflow: visible !important;
+}
+
+.hero {
+    overflow: hidden;
+}
+
+/* Базовые стили для анимируемых элементов */
+.scroll-animate {
+    opacity: 0;
+    transform: translateY(50px);
+    transition: all 0.6s ease-out;
+}
+
+/* Состояние когда элемент видим */
+.scroll-animate.animate-visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Можно добавить небольшую задержку для дочерних элементов */
+.advantages__items .advantages__item,
+.reviews__items .reviews__item,
+.price__table {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: all 0.5s ease-out;
+}
+
+.scroll-animate.animate-visible .advantages__item,
+.scroll-animate.animate-visible .reviews__item,
+.scroll-animate.animate-visible .price__table {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Задержка для каждого элемента в списке */
+.advantages__item:nth-child(1) {
+    transition-delay: 0.1s;
+}
+
+.advantages__item:nth-child(2) {
+    transition-delay: 0.2s;
+}
+
+.advantages__item:nth-child(3) {
+    transition-delay: 0.3s;
+}
+
+.advantages__item:nth-child(4) {
+    transition-delay: 0.4s;
+}
+
+.advantages__item:nth-child(5) {
+    transition-delay: 0.5s;
+}
+
+.advantages__item:nth-child(6) {
+    transition-delay: 0.6s;
 }
