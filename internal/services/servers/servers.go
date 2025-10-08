@@ -272,23 +272,27 @@ func (s *ServersService) RemoveExpiredByUser() error {
 			return err
 		}
 
-		if err := s.vpnService.DeleteUser(ser.Host, e.ConfigFile); err != nil {
-			return err
-		}
-
-		if err := s.vpnService.KickUser(ser.Host, e.ConfigFile); err != nil {
+		if err := s.deleteVPNuser(ser.Host, e.ConfigFile); err != nil {
 			return err
 		}
 
 		if e.ConfigFileExpired != nil {
-			if err := s.vpnService.DeleteUser(ser.Host, *(e.ConfigFileExpired)); err != nil {
-				return err
-			}
-
-			if err := s.vpnService.KickUser(ser.Host, *(e.ConfigFileExpired)); err != nil {
+			if err := s.deleteVPNuser(ser.Host, *(e.ConfigFileExpired)); err != nil {
 				return err
 			}
 		}
+	}
+
+	return nil
+}
+
+func (s *ServersService) deleteVPNuser(host, user string) error {
+	if err := s.vpnService.DeleteUser(host, user); err != nil {
+		return err
+	}
+
+	if err := s.vpnService.KickUser(host, user); err != nil {
+		return err
 	}
 
 	return nil

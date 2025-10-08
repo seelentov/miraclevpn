@@ -110,15 +110,19 @@ func (c *ConnectTGController) GetConfig(bot *tgbotapi.BotAPI, data map[string]in
 		"1️⃣ *Скачайте приложение* OpenVPN Connect, если у вас его еще нет:\n"+
 		"   - [Скачать для iOS](https://apps.apple.com/app/openvpn-connect/id590379981)\n"+
 		"   - [Скачать для Android](https://play.google.com/store/apps/details?id=net.openvpn.openvpn)\n\n"+
-		"2️⃣ *Используйте конфигурационный файл (config.ovpn) в приложении*\n\n"+
-		"⚠️ *Важно!*\n"+
-		"- Этот файл **одноразовый**.\n"+
-		"- Для получения нового файла нажмите **Обновить**.\n",
+		"2️⃣ *Откройте файл (config.ovpn) в приложении*\n\n"+
+		"⚠️ Если не подключается получите новый файл, нажав **Обновить**.\n",
 		server.RegionName)
 
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("♻️ Обновить", fmt.Sprintf("/connect:%v:%v", chatID, server.ID)),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonURL("ℹ️ Инструкция IOS", "https://miivpn.ru/ios.mp4"),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonURL("ℹ️ Инструкция Android", "https://miivpn.ru/android.mp4"),
 		),
 	)
 

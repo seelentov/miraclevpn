@@ -38,13 +38,6 @@ func main() {
 	sshRevokeUserFile := os.Getenv("SSH_REVOKE_USER_FILE")
 	sshConfigsDir := os.Getenv("SSH_CONFIGS_DIR")
 
-	vpnConfigExpirationStt := os.Getenv("VPN_CONFIG_DIRATION_SEC")
-
-	vpnConfigExpiration, err := strconv.Atoi(vpnConfigExpirationStt)
-	if err != nil {
-		log.Fatal("failed get VPN_CONFIG_DIRATION_SEC: " + err.Error())
-	}
-
 	logger, err := logg.NewZapLogger("", 0, debug)
 	if err != nil {
 		log.Fatal(err)
@@ -53,13 +46,6 @@ func main() {
 	gormDB, err := db.NewPostgreConn(dbHost, dbUser, dbPass, dbName, dbPort, dbSsl, dbTZ, "MIIVPN_VPNDAEMON")
 	if err != nil {
 		logger.Logger.Fatal("failed to connect to db", zap.Error(err))
-	}
-
-	vpnRefreshConfigIntervalStr := os.Getenv("VPN_REFRESH_INTERVAL_SEC")
-
-	vpnRefreshConfigInterval, err := strconv.Atoi(vpnRefreshConfigIntervalStr)
-	if err != nil {
-		log.Fatal("failed get VPN_REFRESH_INTERVAL_SEC: " + err.Error())
 	}
 
 	vpnRemoveExpiredIntervalStr := os.Getenv("VPN_REMOVE_EXPIRED_INTERVAL_SEC")
@@ -94,10 +80,6 @@ func main() {
 	tgSenderHealthCheck := tg.NewClient(tgTokenHealthCheck, "")
 
 	serversSrv := servers.NewServersService(userServerRepo, serverRepo, userRepo, vpnSrv, logger.Logger)
-
-	vpnRefreshDaemon := vpndaemon.NewVpnRefreshDaemon(time.Second*time.Duration(vpnRefreshConfigInterval), logger.Logger, serversSrv, tgSenderHealthCheck, tgChatIDHealthCheck, time.Second*time.Duration(vpnConfigExpiration))
-	vpnRefreshDaemon.Start()
-	defer vpnRefreshDaemon.Stop()
 
 	vpnRemoveExpiredDaemon := vpndaemon.NewVpnRemoveExpiredDaemon(time.Second*time.Duration(vpnRemoveExpiredInterval), logger.Logger, serversSrv, tgSenderHealthCheck, tgChatIDHealthCheck)
 	vpnRemoveExpiredDaemon.Start()
