@@ -1,1 +1,27 @@
 <script src='js/app.min.js?_v=20250913232731'></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $(".owl-carousel").owlCarousel({
+            loop: true,
+            margin: 10,
+            nav: false,
+            dots: false,
+            autoplay: true, // включаем автопрокрутку
+            autoplayTimeout: 3000, // интервал между переключениями (в миллисекундах)
+            autoplayHoverPause: true, // пауза при наведении курсора
+            responsive: {
+                0: {
+                    items: 1.1
+                },
+                768: {
+                    items: 2
+                },
+                1200: {
+                    items: 3
+                }
+            }
+        });
+    });
+</script>
