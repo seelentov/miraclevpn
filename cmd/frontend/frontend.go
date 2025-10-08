@@ -101,6 +101,7 @@ func main() {
 		onlyAuth.GET("/", authCtrl.GetLK)
 		onlyAuth.POST("/payment", payCtrl.PostPayment)
 		onlyAuth.POST("/remove-payment", payCtrl.PostRemovePaymentMethod)
+		onlyAuth.POST("/logout", authCtrl.PostLogout)
 	}
 
 	if err := setupStatic(r); err != nil {

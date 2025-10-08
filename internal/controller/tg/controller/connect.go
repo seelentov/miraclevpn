@@ -105,16 +105,15 @@ func (c *ConnectTGController) GetConfig(bot *tgbotapi.BotAPI, data map[string]in
 		panic(err)
 	}
 
-	text := fmt.Sprintf("⏳ *Подключаемся к %s...*\n\n" +
-		"📖 *Простая инструкция:*\n\n" +
-		"1️⃣ *Скачайте приложение* OpenVPN Connect, если у вас его еще нет:\n" +
-		"   - [Скачать для iOS](https://apps.apple.com/app/openvpn-connect/id590379981)\n" +
-		"   - [Скачать для Android](https://play.google.com/store/apps/details?id=net.openvpn.openvpn)\n" +
-		"   - [Скачать для ПК](https://openvpn.net/client)\n\n" +
-		"2️⃣ *Используйте конфигурационный файл (config.ovpn) в приложении*\n\n" +
-		"⚠️ *Важно!*\n" +
-		"- Этот файл **одноразовый**.\n" +
-		"- Для получения нового файла нажмите **Обновить**.\n" +
+	text := fmt.Sprintf("⏳ *Подключаемся к %s...*\n\n"+
+		"📖 *Простая инструкция:*\n\n"+
+		"1️⃣ *Скачайте приложение* OpenVPN Connect, если у вас его еще нет:\n"+
+		"   - [Скачать для iOS](https://apps.apple.com/app/openvpn-connect/id590379981)\n"+
+		"   - [Скачать для Android](https://play.google.com/store/apps/details?id=net.openvpn.openvpn)\n\n"+
+		"2️⃣ *Используйте конфигурационный файл (config.ovpn) в приложении*\n\n"+
+		"⚠️ *Важно!*\n"+
+		"- Этот файл **одноразовый**.\n"+
+		"- Для получения нового файла нажмите **Обновить**.\n",
 		server.RegionName)
 
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(

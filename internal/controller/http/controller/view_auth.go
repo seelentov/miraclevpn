@@ -87,3 +87,8 @@ func (c *ViewAuthController) GetLK(ctx *gin.Context) {
 		HavePaymentID: user.PaymentID != nil,
 	})
 }
+
+func (c *ViewAuthController) PostLogout(ctx *gin.Context) {
+	c.cookieSrv.RemoveAuth(ctx)
+	ctx.Redirect(http.StatusMovedPermanently, "/")
+}

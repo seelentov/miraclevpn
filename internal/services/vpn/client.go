@@ -23,7 +23,6 @@ type TraficStatus struct {
 	ClientName    string
 	BytesSend     int64
 	BytesReceived int64
-	Service       string
 }
 
 type VpnService interface {

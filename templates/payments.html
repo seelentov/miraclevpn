@@ -3,7 +3,7 @@
 {{template "head.html"}}
 
 <body>
-    {{template "header.html"}}
+    {{template "header.html" .}}
     <div class="wrapper">
         <main>
             <div class="container">
@@ -30,6 +30,7 @@
                             </div>
                         </div>
                         {{end}}
+                        {{end}} <!-- Добавьте эту строку -->
                     </div>
                     <div class="center">
                         <button class="button">Оплатить</button>

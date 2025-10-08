@@ -144,7 +144,32 @@ func (c *Client) GetAllRate(host string, sec int) ([]*vpn.TraficStatus, error) {
 			host, err, string(output))
 	}
 
-	return parseIfTop(string(output))
+	trafic, err := parseIfTop(string(output))
+	if err != nil {
+		return nil, fmt.Errorf("get rate (%s) failed: %v",
+			host, err)
+	}
+
+	status, err := c.GetStatus(host)
+	if err != nil {
+		return nil, fmt.Errorf("get users for rate (%s) failed: %v",
+			host, err)
+	}
+
+	clientIPMap := make(map[string]string)
+
+	for _, client := range status.Clients {
+		clientIPMap[client.VirtualAddress] = client.CommonName
+	}
+
+	for i, tr := range trafic {
+		name, ok := clientIPMap[tr.ClientName]
+		if ok {
+			trafic[i].ClientName = name
+		}
+	}
+
+	return trafic, nil
 }
 
 func (c *Client) KickUser(host string, username string) error {
@@ -187,7 +212,149 @@ func parseIfTopOneClient(input string) (int64, int64) {
 }
 
 func parseIfTop(input string) ([]*vpn.TraficStatus, error) {
-	panic("not implemented")
+	results := make([]*vpn.TraficStatus, 0)
+
+	lines := strings.Split(input, "\n")
+
+	lineRegex := regexp.MustCompile(`^\s*\d+\s+([^\s=><]+)\s+([=>]+)\s+([\d\.]+[KMGT]?b)?\s+([\d\.]+[KMGT]?b)?\s+([\d\.]+[KMGT]?b)?\s+([\d\.]+[KMGT]?[B])?`)
+	clientLineRegex := regexp.MustCompile(`^\s*([^\s=><]+)\s+([<=]+)\s+([\d\.]+[KMGT]?b)?\s+([\d\.]+[KMGT]?b)?\s+([\d\.]+[KMGT]?b)?\s+([\d\.]+[KMGT]?[B])?`)
+
+	var firstLineHost string
+	var firstLineBytes int64
+	var firstLineDirection string
+
+	for i := 0; i < len(lines); i++ {
+		line := strings.TrimSpace(lines[i])
+
+		if line == "" || strings.HasPrefix(line, "Listening on") ||
+			strings.HasPrefix(line, "# Host name") ||
+			strings.HasPrefix(line, "---") ||
+			strings.HasPrefix(line, "Total") ||
+			strings.HasPrefix(line, "Peak rate") ||
+			strings.HasPrefix(line, "Cumulative") ||
+			strings.HasPrefix(line, "===") {
+			continue
+		}
+
+		if lineRegex.MatchString(line) {
+			matches := lineRegex.FindStringSubmatch(line)
+			if len(matches) >= 7 {
+				firstLineHost = matches[1]
+				firstLineDirection = matches[2]
+				firstLineBytes = parseBytes(matches[6])
+			}
+			continue
+		}
+
+		if clientLineRegex.MatchString(line) {
+			matches := clientLineRegex.FindStringSubmatch(line)
+			if len(matches) >= 7 && firstLineHost != "" {
+				secondLineHost := matches[1]
+				secondLineDirection := matches[2]
+				secondLineBytes := parseBytes(matches[6])
+
+				var vpnClient string
+				var bytesSent, bytesReceived int64
+
+				if isVPNClient(firstLineHost) && isVPNClient(secondLineHost) {
+					continue
+				}
+
+				if isVPNClient(firstLineHost) {
+					vpnClient = firstLineHost
+
+					if firstLineDirection == "=>" {
+						bytesSent = firstLineBytes
+						bytesReceived = 0
+					} else {
+						bytesSent = 0
+						bytesReceived = firstLineBytes
+					}
+				} else if isVPNClient(secondLineHost) {
+					vpnClient = secondLineHost
+
+					if secondLineDirection == "<=" {
+						bytesSent = 0
+						bytesReceived = secondLineBytes
+					} else {
+						bytesSent = secondLineBytes
+						bytesReceived = 0
+					}
+				}
+
+				if vpnClient != "" {
+					vpnIP := strings.Split(vpnClient, ":")[0]
+
+					traffic := &vpn.TraficStatus{
+						ClientName:    vpnIP,
+						BytesSend:     bytesSent,
+						BytesReceived: bytesReceived,
+					}
+					results = append(results, traffic)
+				}
+
+				firstLineHost = ""
+				firstLineBytes = 0
+				firstLineDirection = ""
+			}
+		}
+	}
+
+	resultMapped := make(map[string]*vpn.TraficStatus)
+
+	for _, tr := range results {
+		if existing, exists := resultMapped[tr.ClientName]; exists {
+			existing.BytesReceived += tr.BytesReceived
+			existing.BytesSend += tr.BytesSend
+		} else {
+			resultMapped[tr.ClientName] = tr
+		}
+	}
+
+	results = make([]*vpn.TraficStatus, 0, len(resultMapped))
+	for _, v := range resultMapped {
+		results = append(results, v)
+	}
+
+	return results, nil
+}
+
+func isVPNClient(ip string) bool {
+	return strings.HasPrefix(ip, "10.8.0.")
+}
+
+// Функция для парсинга строк с байтами
+func parseBytes(bytesStr string) int64 {
+	if bytesStr == "" {
+		return 0
+	}
+
+	bytesStr = strings.TrimSpace(strings.ToLower(bytesStr))
+
+	multiplier := int64(1)
+
+	if strings.HasSuffix(bytesStr, "kb") {
+		multiplier = 1024
+		bytesStr = strings.TrimSuffix(bytesStr, "kb")
+	} else if strings.HasSuffix(bytesStr, "mb") {
+		multiplier = 1024 * 1024
+		bytesStr = strings.TrimSuffix(bytesStr, "mb")
+	} else if strings.HasSuffix(bytesStr, "gb") {
+		multiplier = 1024 * 1024 * 1024
+		bytesStr = strings.TrimSuffix(bytesStr, "gb")
+	} else if strings.HasSuffix(bytesStr, "tb") {
+		multiplier = 1024 * 1024 * 1024 * 1024
+		bytesStr = strings.TrimSuffix(bytesStr, "tb")
+	} else if strings.HasSuffix(bytesStr, "b") {
+		bytesStr = strings.TrimSuffix(bytesStr, "b")
+	}
+
+	value, err := strconv.ParseFloat(bytesStr, 64)
+	if err != nil {
+		return 0
+	}
+
+	return int64(value * float64(multiplier))
 }
 
 func parseToBytes(valueStr string) int64 {

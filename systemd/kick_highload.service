@@ -1,0 +1,14 @@
+[Unit]
+Description=MiiVPN - Kick Highload
+After=network.target
+
+[Service]
+Type=simple
+User=komkov.vv
+WorkingDirectory=/home/komkov.vv/mii_api
+ExecStart=/home/komkov.vv/mii_api/kick_highload
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
