@@ -219,14 +219,6 @@ func (s *ServersService) UpdateExpired(expiration time.Duration) error {
 					zap.Error(err))
 				return err
 			}
-
-			if err := s.vpnService.KickUser(srv.Host, *(us.ConfigFileExpired)); err != nil {
-				s.logger.Error("failed to kick VPN user",
-					zap.String("host", srv.Host),
-					zap.String("userID", usr.ID),
-					zap.Error(err))
-				return err
-			}
 		}
 
 		s.logger.Info("creating new VPN user",
