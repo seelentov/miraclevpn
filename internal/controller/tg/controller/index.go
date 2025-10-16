@@ -50,7 +50,7 @@ func (c *IndexTGController) Index(bot *tgbotapi.BotAPI, data map[string]interfac
 			tgbotapi.NewInlineKeyboardButtonData("🔑 Получить ключ", fmt.Sprintf("/get_key:%v", chatID)),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonURL("❓ Поддержка", "https://t.me/miivpn_support"),
+			tgbotapi.NewInlineKeyboardButtonURL("❓ Поддержка", "https://t.me/miiboost_support"),
 		),
 	}
 
@@ -82,7 +82,7 @@ func (c *IndexTGController) FreeForReview(bot *tgbotapi.BotAPI, data map[string]
 	text := "🎁 *7 дней подписки за отзыв\\!*\n\n" +
 		"Получите *7 дней бесплатной подписки* в обмен на ваш честный отзыв\\!\n\n" +
 		"*Как это работает:*\n" +
-		"1\\. Напишите отзыв о нашем VPN\\-сервисе в диалоге с @miivpn\\_support\n" +
+		"1\\. Напишите отзыв о нашем сервисе в диалоге с @miiboost\\_support\n" +
 		"2\\. Обязательно укажите в отзыве ваш UID: `" + user.ID + "`\n" +
 		"3\\. После проверки отзыва мы активируем для вас 7 дней бесплатной подписки\\!\n\n" +
 		"Ваш отзыв поможет нам стать лучше\\! ❤️\n\n" +
@@ -90,7 +90,7 @@ func (c *IndexTGController) FreeForReview(bot *tgbotapi.BotAPI, data map[string]
 
 	keyboard := tgbotapi.NewInlineKeyboardMarkup(
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonURL("💬 Написать отзыв", "https://t.me/miivpn_support"),
+			tgbotapi.NewInlineKeyboardButtonURL("💬 Написать отзыв", "https://t.me/miiboost_support"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("🔙 Назад", fmt.Sprintf("/start:%v", chatID)),

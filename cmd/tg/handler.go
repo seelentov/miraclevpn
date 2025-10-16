@@ -43,6 +43,7 @@ func main() {
 	sshConfigsDir := os.Getenv("SSH_CONFIGS_DIR")
 
 	tgToken := os.Getenv("TG_HANDLER_TOKEN")
+	tgTokenOld := os.Getenv("TG_HANDLER_OLD_TOKEN")
 
 	freeTrial, err := strconv.Atoi(os.Getenv("FREE_TRIAL_SEC"))
 	if err != nil {
@@ -95,6 +96,27 @@ func main() {
 	authCtrl := controller.NewAuthTGController()
 	connectCtrl := controller.NewConnectTGController(serversSrv)
 
+	go func() {
+		rOld, err := tgcontroller.NewRouter(tgTokenOld)
+		if err != nil {
+			panic(err)
+		}
+
+		rOld.Use404(middleware.NotFoundHandler())
+		rOld.UseRecover(middleware.RecoverrHandler(debug, tgSenderHealthCheck, tgChatIDHealthCheck, logger.Logger))
+		rOld.Use(middleware.AuthMiddlewareTg(authSrv, userRepo))
+
+		rOld.UseHandler("/start", indexCtrl.Index)
+		rOld.UseHandler("/menu", indexCtrl.Index)
+		rOld.UseHandler("/get_key", authCtrl.GetToken)
+		rOld.UseHandler("/gift", indexCtrl.FreeForReview)
+
+		rOld.UseHandler("/servers", connectCtrl.Index)
+
+		logger.Logger.Info("Starting old...")
+		rOld.Start()
+	}()
+
 	r, err := tgcontroller.NewRouter(tgToken)
 	if err != nil {
 		panic(err)
@@ -110,10 +132,8 @@ func main() {
 	r.UseHandler("/gift", indexCtrl.FreeForReview)
 
 	r.UseHandler("/servers", connectCtrl.Index)
-	r.UseHandler("/connect", connectCtrl.GetConfig)
-	r.UseHandler("/servers_all", connectCtrl.GetAll)
-	r.UseHandler("/stats", connectCtrl.GetStats)
 
-	logger.Logger.Info("Starting...")
+	logger.Logger.Info("Starting old...")
+
 	r.Start()
 }

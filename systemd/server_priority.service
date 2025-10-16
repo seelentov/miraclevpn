@@ -1,5 +1,5 @@
 [Unit]
-Description=MiiVPN - Server Priority
+Description=MiiBoost - Server Priority
 After=network.target
 
 [Service]

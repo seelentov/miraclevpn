@@ -1,5 +1,5 @@
 [Unit]
-Description=MiiVPN - Kick Highload
+Description=MiiBoost - Kick Highload
 After=network.target
 
 [Service]

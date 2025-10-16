@@ -1,5 +1,5 @@
 [Unit]
-Description=MiiVPN - Monitor
+Description=MiiBoost - Monitor
 After=network.target
 
 [Service]

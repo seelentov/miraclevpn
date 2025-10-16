@@ -52,6 +52,15 @@ func (r *ServerRepository) FindBest() ([]*models.Server, error) {
 	return s, nil
 }
 
+func (r *ServerRepository) FindSuperBest() (*models.Server, error) {
+	var s models.Server
+	if err := r.db.Where("active = ? AND preview = ?", true, false).Order("priority DESC").First(&s).Error; err != nil {
+		return nil, err
+	}
+
+	return &s, nil
+}
+
 func (r *ServerRepository) FindByRegion(region string) ([]*models.Server, error) {
 	var s []*models.Server
 	if err := r.db.Where("region = ? AND active = ? AND preview = ?", region, true, false).Order("priority DESC").Find(&s).Error; err != nil {

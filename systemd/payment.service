@@ -1,5 +1,5 @@
 [Unit]
-Description=MiiVPN - Payment
+Description=MiiBoost - Payment
 After=network.target
 
 [Service]

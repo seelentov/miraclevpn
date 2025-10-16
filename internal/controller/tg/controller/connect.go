@@ -5,7 +5,6 @@ import (
 	"miraclevpn/internal/models"
 	"miraclevpn/internal/services/servers"
 	"strconv"
-	"strings"
 	"time"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
@@ -21,57 +20,7 @@ func NewConnectTGController(srv *servers.ServersService) *ConnectTGController {
 
 func (c *ConnectTGController) Index(bot *tgbotapi.BotAPI, data map[string]interface{}) {
 	chatID := data["chat_id"].(int64)
-
-	servers, err := c.srv.GetBest()
-	if err != nil {
-		panic(err)
-	}
-
-	text := "🌍 *Выберите сервер*\n\n"
-
-	rows := make([][]tgbotapi.InlineKeyboardButton, 0)
-
-	for _, server := range servers {
-		rows = append(rows,
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(server.RegionName, fmt.Sprintf("/connect:%v:%v", chatID, server.ID)),
-			),
-		)
-	}
-
-	rows = append(rows,
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🌍 Список серверов", fmt.Sprintf("/servers_all:%v", chatID)),
-		),
-	)
-
-	rows = append(rows,
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("📊 Статистика", fmt.Sprintf("/stats:%v", chatID)),
-		),
-	)
-
-	keyboard := tgbotapi.NewInlineKeyboardMarkup(
-		rows...,
-	)
-
-	msg := tgbotapi.NewMessage(chatID, text)
-	msg.ParseMode = "Markdown"
-	msg.ReplyMarkup = keyboard
-
-	if _, err := bot.Send(msg); err != nil {
-		panic(err)
-	}
-}
-
-func (c *ConnectTGController) GetConfig(bot *tgbotapi.BotAPI, data map[string]interface{}) {
-	chatID := data["chat_id"].(int64)
 	userID := strconv.Itoa(int(chatID))
-	serverIDStr := data["param"].(string)
-	serverID, err := strconv.ParseInt(serverIDStr, 10, 64)
-	if err != nil {
-		panic(err)
-	}
 
 	u := data["user"].(*models.User)
 
@@ -91,7 +40,12 @@ func (c *ConnectTGController) GetConfig(bot *tgbotapi.BotAPI, data map[string]in
 		return
 	}
 
-	server, err := c.srv.GetServerByID(serverID)
+	bestServer, err := c.srv.GetOnlyBest()
+	if err != nil {
+		panic(err)
+	}
+
+	server, err := c.srv.GetServerByID(bestServer.ID)
 	if err != nil {
 		panic(err)
 	}
@@ -100,7 +54,7 @@ func (c *ConnectTGController) GetConfig(bot *tgbotapi.BotAPI, data map[string]in
 		panic("preview")
 	}
 
-	config, err := c.srv.GetConfig(userID, serverID)
+	config, err := c.srv.GetConfig(userID, server.ID)
 	if err != nil {
 		panic(err)
 	}
@@ -119,10 +73,10 @@ func (c *ConnectTGController) GetConfig(bot *tgbotapi.BotAPI, data map[string]in
 			tgbotapi.NewInlineKeyboardButtonData("♻️ Обновить", fmt.Sprintf("/connect:%v:%v", chatID, server.ID)),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonURL("ℹ️ Инструкция IOS", "https://miivpn.ru/ios.mp4"),
+			tgbotapi.NewInlineKeyboardButtonURL("ℹ️ Инструкция IOS", "https://miiboost.ru/ios.mp4"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonURL("ℹ️ Инструкция Android", "https://miivpn.ru/android.mp4"),
+			tgbotapi.NewInlineKeyboardButtonURL("ℹ️ Инструкция Android", "https://miiboost.ru/android.mp4"),
 		),
 	)
 
@@ -137,75 +91,6 @@ func (c *ConnectTGController) GetConfig(bot *tgbotapi.BotAPI, data map[string]in
 	docMsg.ReplyMarkup = keyboard
 
 	if _, err := bot.Send(docMsg); err != nil {
-		panic(err)
-	}
-}
-
-func (c *ConnectTGController) GetAll(bot *tgbotapi.BotAPI, data map[string]interface{}) {
-	chatID := data["chat_id"].(int64)
-
-	servers, err := c.srv.GetAllServers()
-	if err != nil {
-		panic(err)
-	}
-
-	text := "🌍 *Выберите сервер*\n\n"
-
-	rows := make([][]tgbotapi.InlineKeyboardButton, 0)
-
-	for _, server := range servers {
-		rows = append(rows,
-			tgbotapi.NewInlineKeyboardRow(
-				tgbotapi.NewInlineKeyboardButtonData(server.RegionName+" "+server.Host, fmt.Sprintf("/connect:%v:%v", chatID, server.ID)),
-			),
-		)
-	}
-
-	keyboard := tgbotapi.NewInlineKeyboardMarkup(
-		rows...,
-	)
-
-	msg := tgbotapi.NewMessage(chatID, text)
-	msg.ParseMode = "Markdown"
-	msg.ReplyMarkup = keyboard
-
-	if _, err := bot.Send(msg); err != nil {
-		panic(err)
-	}
-}
-
-func (c *ConnectTGController) GetStats(bot *tgbotapi.BotAPI, data map[string]interface{}) {
-	chatID := data["chat_id"].(int64)
-
-	servers, err := c.srv.GetAllServers()
-	if err != nil {
-		panic(err)
-	}
-
-	textB := strings.Builder{}
-
-	textB.WriteString(" *📊 Статистика серверов*\n\n")
-
-	for _, srv := range servers {
-		server, currentUsersCount, err := c.srv.GetServerStatus(srv.ID)
-		if err != nil {
-			continue
-		}
-
-		textB.WriteString(server.RegionName)
-		textB.WriteString(" ")
-		textB.WriteString(server.Host)
-		textB.WriteString(" - ")
-		textB.WriteString(strconv.Itoa(currentUsersCount))
-		textB.WriteString("/")
-		textB.WriteString(strconv.Itoa(server.MaxUsers))
-		textB.WriteString("\n")
-	}
-
-	msg := tgbotapi.NewMessage(chatID, textB.String())
-	msg.ParseMode = "Markdown"
-
-	if _, err := bot.Send(msg); err != nil {
 		panic(err)
 	}
 }

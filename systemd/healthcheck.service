@@ -1,5 +1,5 @@
 [Unit]
-Description=MiiVPN - Healthcheck
+Description=MiiBoost - Healthcheck
 After=network.target
 
 [Service]
