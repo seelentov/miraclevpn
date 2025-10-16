@@ -90,7 +90,8 @@ func main() {
 	tgSenderHealthCheck := tg.NewClient(tgTokenHealthCheck, "")
 
 	paymentURL := os.Getenv("PAYMENT_URL")
-	indexCtrl := controller.NewIndexTGController(paymentURL)
+	lkURL := os.Getenv("LK_URL")
+	indexCtrl := controller.NewIndexTGController(paymentURL, lkURL)
 	authCtrl := controller.NewAuthTGController()
 	connectCtrl := controller.NewConnectTGController(serversSrv)
 
@@ -106,6 +107,7 @@ func main() {
 	r.UseHandler("/start", indexCtrl.Index)
 	r.UseHandler("/menu", indexCtrl.Index)
 	r.UseHandler("/get_key", authCtrl.GetToken)
+	r.UseHandler("/gift", indexCtrl.FreeForReview)
 
 	r.UseHandler("/servers", connectCtrl.Index)
 	r.UseHandler("/connect", connectCtrl.GetConfig)
