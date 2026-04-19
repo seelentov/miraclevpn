@@ -6,6 +6,8 @@ import (
 	"miraclevpn/internal/config/logg"
 	"miraclevpn/internal/daemon/healthcheck"
 	"miraclevpn/internal/repo"
+	vpnrouter "miraclevpn/internal/services/vpn"
+	"miraclevpn/pkg/awg"
 	"miraclevpn/pkg/ovpn"
 	"miraclevpn/pkg/tg"
 	"os"
@@ -40,6 +42,19 @@ func main() {
 	sshRevokeUserFile := os.Getenv("SSH_REVOKE_USER_FILE")
 	sshConfigsDir := os.Getenv("SSH_CONFIGS_DIR")
 
+	awgSSHUser := os.Getenv("AWG_SSH_USER")
+	if awgSSHUser == "" {
+		awgSSHUser = sshUser
+	}
+	awgManageScript := os.Getenv("AWG_MANAGE_SCRIPT")
+	if awgManageScript == "" {
+		awgManageScript = "/usr/local/bin/wg-manage.sh"
+	}
+	awgClientsDir := os.Getenv("AWG_CLIENTS_DIR")
+	if awgClientsDir == "" {
+		awgClientsDir = "/etc/wireguard/clients"
+	}
+
 	logger, err := logg.NewZapLogger("", 0, debug)
 	if err != nil {
 		log.Fatal(err)
@@ -51,9 +66,11 @@ func main() {
 		logger.Logger.Fatal("failed to connect to db", zap.Error(err))
 	}
 
-	vpnSrv := ovpn.NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile, sshConfigsDir)
-
 	serverRepo := repo.NewServerRepository(gormDB)
+
+	ovpnSrv := ovpn.NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile, sshConfigsDir)
+	awgSrv := awg.NewClient(awgSSHUser, awgManageScript, awgClientsDir)
+	vpnSrv := vpnrouter.NewVpnRouter(ovpnSrv, awgSrv, serverRepo)
 
 	healthCheckIntervalSec := 60
 	h := os.Getenv("HEALTHCHECK_INTERVAL_SEC")

@@ -7,7 +7,9 @@ import (
 	"miraclevpn/internal/controller/http/controller"
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/admin"
+	vpnrouter "miraclevpn/internal/services/vpn"
 	viewutils "miraclevpn/internal/utils/view_utils"
+	"miraclevpn/pkg/awg"
 	"miraclevpn/pkg/ovpn"
 	"os"
 
@@ -37,9 +39,25 @@ func main() {
 	sshCreateUserFile := os.Getenv("SSH_CREATE_USER_FILE")
 	sshRevokeUserFile := os.Getenv("SSH_REVOKE_USER_FILE")
 	sshConfigsDir := os.Getenv("SSH_CONFIGS_DIR")
-	vpnSrv := ovpn.NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile, sshConfigsDir)
+
+	awgSSHUser := os.Getenv("AWG_SSH_USER")
+	if awgSSHUser == "" {
+		awgSSHUser = sshUser
+	}
+	awgManageScript := os.Getenv("AWG_MANAGE_SCRIPT")
+	if awgManageScript == "" {
+		awgManageScript = "/usr/local/bin/wg-manage.sh"
+	}
+	awgClientsDir := os.Getenv("AWG_CLIENTS_DIR")
+	if awgClientsDir == "" {
+		awgClientsDir = "/etc/wireguard/clients"
+	}
 
 	serverRepo := repo.NewServerRepository(gormDB)
+
+	ovpnSrv := ovpn.NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile, sshConfigsDir)
+	awgSrv := awg.NewClient(awgSSHUser, awgManageScript, awgClientsDir)
+	vpnSrv := vpnrouter.NewVpnRouter(ovpnSrv, awgSrv, serverRepo)
 	usRepo := repo.NewUserServerRepository(gormDB)
 
 	monitorSrv := admin.NewMonitorService(

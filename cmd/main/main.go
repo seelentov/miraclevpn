@@ -19,6 +19,8 @@ import (
 	"miraclevpn/internal/services/payment"
 	"miraclevpn/internal/services/servers"
 	"miraclevpn/internal/services/user"
+	vpnrouter "miraclevpn/internal/services/vpn"
+	"miraclevpn/pkg/awg"
 	"miraclevpn/pkg/ovpn"
 	"miraclevpn/pkg/tg"
 	"miraclevpn/pkg/yookassa"
@@ -55,6 +57,19 @@ func main() {
 	sshCreateUserFile := os.Getenv("SSH_CREATE_USER_FILE")
 	sshRevokeUserFile := os.Getenv("SSH_REVOKE_USER_FILE")
 	sshConfigsDir := os.Getenv("SSH_CONFIGS_DIR")
+
+	awgSSHUser := os.Getenv("AWG_SSH_USER")
+	if awgSSHUser == "" {
+		awgSSHUser = sshUser
+	}
+	awgManageScript := os.Getenv("AWG_MANAGE_SCRIPT")
+	if awgManageScript == "" {
+		awgManageScript = "/usr/local/bin/wg-manage.sh"
+	}
+	awgClientsDir := os.Getenv("AWG_CLIENTS_DIR")
+	if awgClientsDir == "" {
+		awgClientsDir = "/etc/wireguard/clients"
+	}
 
 	proofKey := os.Getenv("MII_VPN_PROOF")
 	proofBanIfFail := os.Getenv("PROOF_BAN_IF_FAIL") == "true"
@@ -137,7 +152,9 @@ func main() {
 	authDataRepo := repo.NewAuthDataRepository(gormDB)
 	payRepo := repo.NewPaymentRepository(gormDB, time.Second*time.Duration(paymentExpiration))
 
-	vpnSrv := ovpn.NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile, sshConfigsDir)
+	ovpnSrv := ovpn.NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile, sshConfigsDir)
+	awgSrv := awg.NewClient(awgSSHUser, awgManageScript, awgClientsDir)
+	vpnSrv := vpnrouter.NewVpnRouter(ovpnSrv, awgSrv, serverRepo)
 
 	paymentClient := yookassa.NewClient(os.Getenv("PAYMENT_SHOP_ID"), os.Getenv("PAYMENT_SECRET"), os.Getenv("PAYMENT_RETURN_URL"))
 

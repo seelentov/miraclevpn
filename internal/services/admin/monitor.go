@@ -4,19 +4,18 @@ package admin
 import (
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/vpn"
-	"miraclevpn/pkg/ovpn"
 	"sort"
 	"sync"
 )
 
 type MonitorService struct {
-	vpnSrv     *ovpn.Client
+	vpnSrv     vpn.VpnService
 	usRepo     *repo.UserServerRepository
 	serverRepo *repo.ServerRepository
 }
 
 func NewMonitorService(
-	vpnSrv *ovpn.Client,
+	vpnSrv vpn.VpnService,
 	usRepo *repo.UserServerRepository,
 	serverRepo *repo.ServerRepository,
 ) *MonitorService {

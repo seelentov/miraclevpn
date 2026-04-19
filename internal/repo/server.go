@@ -143,6 +143,14 @@ func (r *ServerRepository) SendRequest(item string, userID string) error {
 	return nil
 }
 
+func (r *ServerRepository) FindByHost(host string) (*models.Server, error) {
+	var s models.Server
+	if err := r.db.Where("host = ?", host).First(&s).Error; err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
 func (r *ServerRepository) UpdatePriority(id int64, priority int) error {
 	s, err := r.FindByID(id)
 	if err != nil {
