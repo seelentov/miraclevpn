@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mii Boost — Подключение</title>
+<link rel="stylesheet" href="/css/chat.css">
+</head>
+<body>
+
+<!-- Welcome overlay -->
+<div id="welcome">
+    <div class="welcome-card">
+        <div class="welcome-card__logo">🔒</div>
+        <div class="welcome-card__title">Mii Boost VPN</div>
+        <div class="welcome-card__sub">Безопасный доступ к интернету.<br>Войдите или создайте аккаунт.</div>
+
+        <button class="welcome-btn welcome-btn--primary" id="btn-new">🆕 Новый пользователь</button>
+        <button class="welcome-btn welcome-btn--secondary" id="btn-has-key">🔑 У меня есть ключ</button>
+
+        <div class="key-input-wrap" id="key-wrap">
+            <textarea class="key-input" id="key-input" placeholder="Вставьте ваш ключ..."></textarea>
+            <div class="key-error" id="key-error"></div>
+            <button class="welcome-btn welcome-btn--primary" id="btn-submit-key">Войти</button>
+        </div>
+    </div>
+</div>
+
+<!-- Chat -->
+<div class="chat-header">
+    <a href="/" class="chat-header__back">←</a>
+    <div class="chat-header__avatar">🔒</div>
+    <div class="chat-header__info">
+        <div class="chat-header__name">Mii Boost</div>
+        <div class="chat-header__status" id="chat-status">bot</div>
+    </div>
+    <button class="chat-header__logout" id="btn-logout" title="Выйти">Выйти</button>
+</div>
+
+<div class="chat-messages" id="chat-messages">
+    <div class="typing" id="typing">
+        <span></span><span></span><span></span>
+    </div>
+</div>
+
+<script src="/js/chat.js"></script>
+<script src="//code.jivosite.com/widget/W0wvZEVzsl" async></script>
+</body>
+</html>

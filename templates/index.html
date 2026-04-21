@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="ru">
 {{template "head.html"}}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 <body>
     {{template "header.html" .}}
@@ -16,27 +17,17 @@
                             Надежный и удобный ускоритель интернета
                         </p>
                         <div class="hero__btns">
-                            <a href="build.apk" download class="hero__btn button">
-                                Скачать Android
-                            </a>
-                            <a href="https://t.me/miiboostauth_bot" class="hero__btn button">
-                                Подключиться IOS
+                            <a href="/chat" class="hero__btn button">
+                                Подключиться
                             </a>
                         </div>
                     </div>
-                    <div class="hero__image-phone hero__image">
-                        <picture>
-                            <source srcset="img/phone.webp" type="image/webp"><img src="img/phone.png" alt="MiiBoost">
-                        </picture>
+                    <div class="hero__map-wrap">
+                        <div id="server-map"></div>
                     </div>
-                    <div class="hero__image-pc hero__image">
-                        <picture>
-                            <source srcset="img/phone2.webp" type="image/webp"><img src="img/phone2.png" alt="MiiBoost">
-                        </picture>
-                    </div>
-
                 </div>
             </section>
+
             <section id="advantages" class="advantages">
                 <div class="advantages__container container">
                     <div class="advantages__header title-block">
@@ -138,63 +129,15 @@
                         </h2>
                     </div>
                     <div class="reviews__items owl-carousel">
+                        {{range .Reviews}}
                         <div class="reviews__item block">
-                            <a class="reviews__item-header" href="https://vk.com/morozz_ea">
-                                <img src="/img/reviews/6.jpg" alt="@morozz_ea">
-                                <h3>@morozz_ea</h3>
+                            <a class="reviews__item-header" href="{{.URL}}">
+                                <img src="{{.PhotoURL}}" alt="{{.Name}}">
+                                <h3>{{.Name}}</h3>
                             </a>
-                            <p class="reviews__item-text">
-                                Все работает как надо, ничего не тупит и не вылетает. Рекомендую
-                            </p>
+                            <p class="reviews__item-text">{{.Text}}</p>
                         </div>
-                        <div class="reviews__item block">
-                            <a class="reviews__item-header" href="https://vk.com/id167108613">
-                                <img src="/img/reviews/5.jpg" alt="Наталья Комкова (Лаврова)">
-                                <h3>Наталья Комкова (Лаврова)</h3>
-                            </a>
-                            <p class="reviews__item-text">
-                                Отлично работает
-                                Все приложения открываются быстро
-                                Не вылетает
-                            </p>
-                        </div>
-                        <div class="reviews__item block">
-                            <a class="reviews__item-header" href="https://t.me/alexvitov">
-                                <img src="/img/reviews/1.jpg" alt="@alexvitov">
-                                <h3>@alexvitov</h3>
-                            </a>
-                            <p class="reviews__item-text">
-                                Пользуюсь сервисом уже несколько месяцев и могу уверенно порекомендовать его.
-                            </p>
-                        </div>
-                        <div class="reviews__item block">
-                            <a class="reviews__item-header" href="https://t.me/EeeelllAl">
-                                <img src="/img/reviews/0.jpg" alt="@EeeelllAl">
-                                <h3>@EeeelllAl</h3>
-                            </a>
-                            <p class="reviews__item-text">
-                                Зашибись. Мощный быстрый. Ютуб грузит
-                            </p>
-                        </div>
-                        <div class="reviews__item block">
-                            <a class="reviews__item-header" href="https://t.me/steshaworks">
-                                <img src="/img/reviews/4.jpg" alt="@steshaworks">
-                                <h3>@steshaworks</h3>
-                            </a>
-                            <p class="reviews__item-text">
-                                Ура работает
-                                Все супер
-                            </p>
-                        </div>
-                        <div class="reviews__item block">
-                            <a class="reviews__item-header" href="https://t.me/Gleb656">
-                                <img src="/img/reviews/3.jpg" alt="@Gleb656">
-                                <h3>@Gleb656</h3>
-                            </a>
-                            <p class="reviews__item-text">
-                                бомба
-                            </p>
-                        </div>
+                        {{end}}
                     </div>
                 </div>
             </section>
@@ -317,13 +260,6 @@
             </section>
             <section id="download" class="download">
                 <div class="download__container container">
-                    <a href="build.apk" download class="download__link">
-                        <picture>
-                            <source srcset="/img/android.webp" type="image/webp"><img src="/img/android.png"
-                                alt="MiiBoost Android">
-                        </picture>
-                    </a>
-
                     <a href="https://t.me/miiboostauth_bot" class="download__link">
                         <picture>
                             <source srcset="/img/telegram.png" type="image/webp"><img src="/img/telegram.png"
@@ -336,6 +272,8 @@
     </div>
     {{template "footer.html"}}
     {{template "script.html"}}
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/js/index.js"></script>
 </body>
 
 </html>

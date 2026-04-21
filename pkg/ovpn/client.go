@@ -172,6 +172,19 @@ func (c *Client) GetAllRate(host string, sec int) ([]*vpn.TraficStatus, error) {
 	return trafic, nil
 }
 
+func (c *Client) CheckAvailable(host string) (bool, error) {
+	cmd := doCmd(c.username, host,
+		"curl", "-s", "-o", "/dev/null", "-w", "%{http_code}",
+		"--connect-timeout", "5", "-m", "10", "https://google.com",
+	)
+	output, err := cmd.Output()
+	if err != nil {
+		return false, nil
+	}
+	code := strings.TrimSpace(string(output))
+	return code != "" && code != "000", nil
+}
+
 func (c *Client) KickUser(host string, username string) error {
 	cmd := doCmd(
 		c.username, host,

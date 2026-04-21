@@ -12,6 +12,8 @@ import (
 	"miraclevpn/internal/services/auth"
 	"miraclevpn/internal/services/crypt"
 	"miraclevpn/internal/services/servers"
+	vpnrouter "miraclevpn/internal/services/vpn"
+	"miraclevpn/pkg/awg"
 	"miraclevpn/pkg/ovpn"
 	"miraclevpn/pkg/tg"
 	"os"
@@ -27,23 +29,15 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dbUser := os.Getenv("DB_USER")
-	dbHost := os.Getenv("DB_HOST")
-	dbPass := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
-	dbPort := os.Getenv("DB_PORT")
-	dbSsl := os.Getenv("DB_SSLMODE")
-	dbTZ := os.Getenv("DB_TIMEZONE")
 	debug := os.Getenv("DEBUG") == "true"
 
-	sshUser := os.Getenv("SSH_USER")
-	sshStatusPath := os.Getenv("SSH_STATUS_PATH")
-	sshCreateUserFile := os.Getenv("SSH_CREATE_USER_FILE")
-	sshRevokeUserFile := os.Getenv("SSH_REVOKE_USER_FILE")
-	sshConfigsDir := os.Getenv("SSH_CONFIGS_DIR")
+	sshUser := os.Getenv("OVPN_SSH_USER")
+	sshStatusPath := os.Getenv("OVPN_STATUS_PATH")
+	sshCreateUserFile := os.Getenv("OVPN_CREATE_USER_FILE")
+	sshRevokeUserFile := os.Getenv("OVPN_REVOKE_USER_FILE")
+	sshConfigsDir := os.Getenv("OVPN_CONFIGS_DIR")
 
 	tgToken := os.Getenv("TG_HANDLER_TOKEN")
-	tgTokenOld := os.Getenv("TG_HANDLER_OLD_TOKEN")
 
 	freeTrial, err := strconv.Atoi(os.Getenv("FREE_TRIAL_SEC"))
 	if err != nil {
@@ -61,7 +55,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gormDB, err := db.NewPostgreConn(dbHost, dbUser, dbPass, dbName, dbPort, dbSsl, dbTZ, "MIIVPN_TGHANDLER")
+	gormDB, err := db.NewConnFromEnv()
 	if err != nil {
 		logger.Logger.Fatal("failed to connect to db", zap.Error(err))
 	}
@@ -81,7 +75,22 @@ func main() {
 	serverRepo := repo.NewServerRepository(gormDB)
 	authDataRepo := repo.NewAuthDataRepository(gormDB)
 
-	vpnSrv := ovpn.NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile, sshConfigsDir)
+	awgSSHUser := os.Getenv("AWG_SSH_USER")
+	if awgSSHUser == "" {
+		awgSSHUser = sshUser
+	}
+	awgManageScript := os.Getenv("AWG_MANAGE_SCRIPT")
+	if awgManageScript == "" {
+		awgManageScript = "/usr/local/bin/wg-manage.sh"
+	}
+	awgClientsDir := os.Getenv("AWG_CLIENTS_DIR")
+	if awgClientsDir == "" {
+		awgClientsDir = "/etc/wireguard/clients"
+	}
+
+	ovpnSrv := ovpn.NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile, sshConfigsDir)
+	awgSrv := awg.NewClient(awgSSHUser, awgManageScript, awgClientsDir)
+	vpnSrv := vpnrouter.NewVpnRouter(ovpnSrv, awgSrv, serverRepo)
 
 	authSrv := auth.NewAuthService(userRepo, authDataRepo, jwtSrv, time.Duration(jwtDuration)*time.Minute, logger.Logger)
 	serversSrv := servers.NewServersService(userServerRepo, serverRepo, userRepo, vpnSrv, logger.Logger)
@@ -95,27 +104,6 @@ func main() {
 	indexCtrl := controller.NewIndexTGController(paymentURL, lkURL)
 	authCtrl := controller.NewAuthTGController()
 	connectCtrl := controller.NewConnectTGController(serversSrv)
-
-	go func() {
-		rOld, err := tgcontroller.NewRouter(tgTokenOld)
-		if err != nil {
-			panic(err)
-		}
-
-		rOld.Use404(middleware.NotFoundHandler())
-		rOld.UseRecover(middleware.RecoverrHandler(debug, tgSenderHealthCheck, tgChatIDHealthCheck, logger.Logger))
-		rOld.Use(middleware.AuthMiddlewareTg(authSrv, userRepo))
-
-		rOld.UseHandler("/start", indexCtrl.Index)
-		rOld.UseHandler("/menu", indexCtrl.Index)
-		rOld.UseHandler("/get_key", authCtrl.GetToken)
-		rOld.UseHandler("/gift", indexCtrl.FreeForReview)
-
-		rOld.UseHandler("/servers", connectCtrl.Index)
-
-		logger.Logger.Info("Starting old...")
-		rOld.Start()
-	}()
 
 	r, err := tgcontroller.NewRouter(tgToken)
 	if err != nil {
@@ -132,6 +120,8 @@ func main() {
 	r.UseHandler("/gift", indexCtrl.FreeForReview)
 
 	r.UseHandler("/servers", connectCtrl.Index)
+	r.UseHandler("/quick_connect", connectCtrl.QuickConnect)
+	r.UseHandler("/connect", connectCtrl.Connect)
 
 	logger.Logger.Info("Starting old...")
 

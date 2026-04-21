@@ -25,7 +25,7 @@ func NewServerRepository(db *gorm.DB) *ServerRepository {
 
 func (r *ServerRepository) FindAll() ([]*models.Server, error) {
 	var s []*models.Server
-	if err := r.db.Where("active = ? AND preview = ?", true, false).Order("priority DESC").Find(&s).Error; err != nil {
+	if err := r.db.Where("active = ? AND preview = ?", true, false).Order("id ASC").Find(&s).Error; err != nil {
 		return nil, err
 	}
 	return s, nil
@@ -35,12 +35,12 @@ func (r *ServerRepository) FindBest() ([]*models.Server, error) {
 	var s []*models.Server
 
 	subquery := r.db.Model(&models.Server{}).
-		Select("region, MAX(priority) as max_priority").
+		Select("region, MIN(id) as min_id").
 		Where("active = ? AND preview = ?", true, false).
 		Group("region")
 
 	err := r.db.
-		Joins("INNER JOIN (?) as mp ON servers.region = mp.region AND servers.priority = mp.max_priority", subquery).
+		Joins("INNER JOIN (?) as mb ON servers.region = mb.region AND servers.id = mb.min_id", subquery).
 		Where("servers.active = ?", true).
 		Order("servers.region").
 		Find(&s).Error
@@ -54,7 +54,7 @@ func (r *ServerRepository) FindBest() ([]*models.Server, error) {
 
 func (r *ServerRepository) FindSuperBest() (*models.Server, error) {
 	var s models.Server
-	if err := r.db.Where("active = ? AND preview = ?", true, false).Order("priority DESC").First(&s).Error; err != nil {
+	if err := r.db.Where("active = ? AND preview = ?", true, false).Order("id ASC").First(&s).Error; err != nil {
 		return nil, err
 	}
 
@@ -63,7 +63,7 @@ func (r *ServerRepository) FindSuperBest() (*models.Server, error) {
 
 func (r *ServerRepository) FindByRegion(region string) ([]*models.Server, error) {
 	var s []*models.Server
-	if err := r.db.Where("region = ? AND active = ? AND preview = ?", region, true, false).Order("priority DESC").Find(&s).Error; err != nil {
+	if err := r.db.Where("region = ? AND active = ? AND preview = ?", region, true, false).Order("id ASC").Find(&s).Error; err != nil {
 		return nil, err
 	}
 
@@ -101,6 +101,15 @@ func (r *ServerRepository) FindAllRegions() ([]*models.Region, error) {
 	}
 
 	return regions, nil
+}
+
+// FindAllForMap returns all active servers including preview ones, ordered for map display.
+func (r *ServerRepository) FindAllForMap() ([]*models.Server, error) {
+	var s []*models.Server
+	if err := r.db.Where("active = ?", true).Order("preview ASC, id ASC").Find(&s).Error; err != nil {
+		return nil, err
+	}
+	return s, nil
 }
 
 func (r *ServerRepository) FindPreview() ([]*models.Server, error) {
@@ -151,13 +160,3 @@ func (r *ServerRepository) FindByHost(host string) (*models.Server, error) {
 	return &s, nil
 }
 
-func (r *ServerRepository) UpdatePriority(id int64, priority int) error {
-	s, err := r.FindByID(id)
-	if err != nil {
-		return err
-	}
-
-	s.Priority = priority
-
-	return r.db.Save(s).Error
-}

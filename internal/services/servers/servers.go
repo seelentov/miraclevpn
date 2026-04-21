@@ -4,6 +4,7 @@ package servers
 import (
 	"errors"
 	"log"
+	"math"
 	"miraclevpn/internal/models"
 	"miraclevpn/internal/repo"
 	"miraclevpn/internal/services/vpn"
@@ -17,6 +18,12 @@ import (
 var (
 	ErrNotFound = errors.New("server not found")
 )
+
+type ServerWithStatus struct {
+	Server    *models.Server
+	Online    int
+	Available bool
+}
 
 type ServersService struct {
 	ursSrvRepo *repo.UserServerRepository
@@ -34,6 +41,88 @@ func NewServersService(ursSrvRepo *repo.UserServerRepository, srvRepo *repo.Serv
 		vpnService,
 		logger,
 	}
+}
+
+func (s *ServersService) GetAllServersWithStatus() ([]*ServerWithStatus, error) {
+	srvs, err := s.GetAllServers()
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*ServerWithStatus, len(srvs))
+	var wg sync.WaitGroup
+
+	for i, srv := range srvs {
+		wg.Add(1)
+		go func(idx int, server *models.Server) {
+			defer wg.Done()
+
+			var online int
+			var available bool
+			var inner sync.WaitGroup
+			inner.Add(2)
+
+			go func() {
+				defer inner.Done()
+				status, err := s.vpnService.GetStatus(server.Host)
+				if err == nil {
+					online = len(status.Clients)
+				}
+			}()
+
+			go func() {
+				defer inner.Done()
+				avail, err := s.vpnService.CheckAvailable(server.Host)
+				if err == nil {
+					available = avail
+				}
+			}()
+
+			inner.Wait()
+			result[idx] = &ServerWithStatus{
+				Server:    server,
+				Online:    online,
+				Available: available,
+			}
+		}(i, srv)
+	}
+
+	wg.Wait()
+	return result, nil
+}
+
+// GetBestAvailableServer returns the available server with the most free slots.
+// Unlimited servers (MaxUsers=0) are scored higher than capped ones.
+func (s *ServersService) GetBestAvailableServer() (*ServerWithStatus, error) {
+	srvList, err := s.GetAllServersWithStatus()
+	if err != nil {
+		return nil, err
+	}
+
+	score := func(sw *ServerWithStatus) int {
+		if sw.Server.MaxUsers == 0 {
+			return math.MaxInt / 2
+		}
+		return (sw.Server.MaxUsers - sw.Online) * 1000
+	}
+
+	var best *ServerWithStatus
+	for _, sw := range srvList {
+		if !sw.Available {
+			continue
+		}
+		if sw.Server.MaxUsers > 0 && sw.Online >= sw.Server.MaxUsers {
+			continue
+		}
+		if best == nil || score(sw) > score(best) {
+			best = sw
+		}
+	}
+
+	if best == nil {
+		return nil, ErrNotFound
+	}
+	return best, nil
 }
 
 func (s *ServersService) GetAllServers() ([]*models.Server, error) {
@@ -84,7 +173,7 @@ func (s *ServersService) GetConfig(userID string, serverID int64) (string, error
 		s.logger.Error("failed to find user-server config", zap.String("user_id", userID), zap.Int64("server_id", serverID), zap.Error(err))
 		return "", err
 	}
-	if us != nil {
+	if us != nil && us.Config != "" {
 		s.logger.Debug("config found for user-server", zap.String("user_id", userID), zap.Int64("server_id", serverID))
 		return us.Config, nil
 	}

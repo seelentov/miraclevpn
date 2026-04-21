@@ -38,7 +38,10 @@ func (c *IndexTGController) Index(bot *tgbotapi.BotAPI, data map[string]interfac
 
 	rows := [][]tgbotapi.InlineKeyboardButton{
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData("🌍 Подключиться", fmt.Sprintf("/servers:%v", chatID)),
+			tgbotapi.NewInlineKeyboardButtonData("⚡ Быстрое подключение", fmt.Sprintf("/quick_connect:%v", chatID)),
+		),
+		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData("🌍 Выбрать сервер", fmt.Sprintf("/servers:%v", chatID)),
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("🎁 7 дней подписки за отзыв!", fmt.Sprintf("/gift:%v", chatID)),

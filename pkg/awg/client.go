@@ -94,7 +94,7 @@ func (c *Client) CreateUser(host string) (config string, filename string, err er
 	}
 
 	cmd := doCmd(c.username, host, "sudo", c.manageScript, "add", username)
-	output, err := cmd.CombinedOutput()
+	output, err := cmd.Output()
 	if err != nil {
 		return "", "", fmt.Errorf("awg add user %s on %s failed: %v\noutput: %s", username, host, err, output)
 	}
@@ -138,6 +138,20 @@ func (c *Client) KickUser(host string, username string) error {
 	}
 
 	return nil
+}
+
+// CheckAvailable tests SSH reachability and outbound internet access via curl.
+func (c *Client) CheckAvailable(host string) (bool, error) {
+	cmd := doCmd(c.username, host,
+		"curl", "-s", "-o", "/dev/null", "-w", "%{http_code}",
+		"--connect-timeout", "5", "-m", "10", "https://google.com",
+	)
+	output, err := cmd.Output()
+	if err != nil {
+		return false, nil
+	}
+	code := strings.TrimSpace(string(output))
+	return code != "" && code != "000", nil
 }
 
 // GetAllRate returns per-user transfer rates by sampling awg dump twice over sec seconds.

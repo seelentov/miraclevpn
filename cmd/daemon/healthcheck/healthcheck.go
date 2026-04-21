@@ -23,24 +23,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dbUser := os.Getenv("DB_USER")
-	dbHost := os.Getenv("DB_HOST")
-	dbPass := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
-	dbPort := os.Getenv("DB_PORT")
-	dbSsl := os.Getenv("DB_SSLMODE")
-	dbTZ := os.Getenv("DB_TIMEZONE")
 	debug := os.Getenv("DEBUG") == "true"
 
 	tgTokenHealthCheck := os.Getenv("TG_HEALTHCHECK_TOKEN")
 	tgChatIDHealthCheck := os.Getenv("TG_HEALTHCHECK_CHAT_ID")
 	tgSenderHealthCheck := tg.NewClient(tgTokenHealthCheck, "")
 
-	sshUser := os.Getenv("SSH_USER")
-	sshStatusPath := os.Getenv("SSH_STATUS_PATH")
-	sshCreateUserFile := os.Getenv("SSH_CREATE_USER_FILE")
-	sshRevokeUserFile := os.Getenv("SSH_REVOKE_USER_FILE")
-	sshConfigsDir := os.Getenv("SSH_CONFIGS_DIR")
+	sshUser := os.Getenv("OVPN_SSH_USER")
+	sshStatusPath := os.Getenv("OVPN_STATUS_PATH")
+	sshCreateUserFile := os.Getenv("OVPN_CREATE_USER_FILE")
+	sshRevokeUserFile := os.Getenv("OVPN_REVOKE_USER_FILE")
+	sshConfigsDir := os.Getenv("OVPN_CONFIGS_DIR")
 
 	awgSSHUser := os.Getenv("AWG_SSH_USER")
 	if awgSSHUser == "" {
@@ -60,8 +53,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// Подключение к БД PostgreSQL
-	gormDB, err := db.NewPostgreConn(dbHost, dbUser, dbPass, dbName, dbPort, dbSsl, dbTZ, "MIIVPN_HEALTHCHECKDAEMON")
+	gormDB, err := db.NewConnFromEnv()
 	if err != nil {
 		logger.Logger.Fatal("failed to connect to db", zap.Error(err))
 	}

@@ -20,11 +20,11 @@ func TestMain(m *testing.M) {
 }
 
 func setup() {
-	sshUser := os.Getenv("SSH_USER")
-	sshStatusPath := os.Getenv("SSH_STATUS_PATH")
-	sshCreateUserFile := os.Getenv("SSH_CREATE_USER_FILE")
-	sshRevokeUserFile := os.Getenv("SSH_REVOKE_USER_FILE")
-	sshConfigsDir := os.Getenv("SSH_CONFIGS_DIR")
+	sshUser := os.Getenv("OVPN_SSH_USER")
+	sshStatusPath := os.Getenv("OVPN_STATUS_PATH")
+	sshCreateUserFile := os.Getenv("OVPN_CREATE_USER_FILE")
+	sshRevokeUserFile := os.Getenv("OVPN_REVOKE_USER_FILE")
+	sshConfigsDir := os.Getenv("OVPN_CONFIGS_DIR")
 
 	client = NewClient(sshUser, sshStatusPath, sshCreateUserFile, sshRevokeUserFile, sshConfigsDir)
 }

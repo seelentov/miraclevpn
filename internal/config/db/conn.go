@@ -19,6 +19,7 @@ var migrate = []any{
 	&models.Request{},
 	&models.AuthData{},
 	&models.Payment{},
+	&models.Review{},
 }
 
 func NewConn(dialector gorm.Dialector) (*gorm.DB, error) {
@@ -38,6 +39,6 @@ func NewConn(dialector gorm.Dialector) (*gorm.DB, error) {
 	return db, nil
 }
 
-func seed(db *gorm.DB) (err error) {
-	return
+func seed(db *gorm.DB) error {
+	return runSeed(db)
 }

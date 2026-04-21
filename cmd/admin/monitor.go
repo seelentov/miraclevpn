@@ -22,23 +22,16 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dbUser := os.Getenv("DB_USER")
-	dbHost := os.Getenv("DB_HOST")
-	dbPass := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
-	dbPort := os.Getenv("DB_PORT")
-	dbSsl := os.Getenv("DB_SSLMODE")
-	dbTZ := os.Getenv("DB_TIMEZONE")
-	gormDB, err := db.NewPostgreConn(dbHost, dbUser, dbPass, dbName, dbPort, dbSsl, dbTZ, "MIIVPN_MONITOR")
+	gormDB, err := db.NewConnFromEnv()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	sshUser := os.Getenv("SSH_USER")
-	sshStatusPath := os.Getenv("SSH_STATUS_PATH")
-	sshCreateUserFile := os.Getenv("SSH_CREATE_USER_FILE")
-	sshRevokeUserFile := os.Getenv("SSH_REVOKE_USER_FILE")
-	sshConfigsDir := os.Getenv("SSH_CONFIGS_DIR")
+	sshUser := os.Getenv("OVPN_SSH_USER")
+	sshStatusPath := os.Getenv("OVPN_STATUS_PATH")
+	sshCreateUserFile := os.Getenv("OVPN_CREATE_USER_FILE")
+	sshRevokeUserFile := os.Getenv("OVPN_REVOKE_USER_FILE")
+	sshConfigsDir := os.Getenv("OVPN_CONFIGS_DIR")
 
 	awgSSHUser := os.Getenv("AWG_SSH_USER")
 	if awgSSHUser == "" {

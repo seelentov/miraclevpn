@@ -22,13 +22,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dbUser := os.Getenv("DB_USER")
-	dbHost := os.Getenv("DB_HOST")
-	dbPass := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
-	dbPort := os.Getenv("DB_PORT")
-	dbSsl := os.Getenv("DB_SSLMODE")
-	dbTZ := os.Getenv("DB_TIMEZONE")
 	debug := os.Getenv("DEBUG") == "true"
 
 	tgTokenHealthCheck := os.Getenv("TG_HEALTHCHECK_TOKEN")
@@ -61,7 +54,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gormDB, err := db.NewPostgreConn(dbHost, dbUser, dbPass, dbName, dbPort, dbSsl, dbTZ, "MIIVPN_PAYMENTDAEMON")
+	gormDB, err := db.NewConnFromEnv()
 	if err != nil {
 		logger.Logger.Fatal("failed to connect to db", zap.Error(err))
 	}

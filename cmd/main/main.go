@@ -10,6 +10,7 @@ import (
 
 	"miraclevpn/internal/config/db"
 	"miraclevpn/internal/config/logg"
+
 	"miraclevpn/internal/controller/http/controller"
 	"miraclevpn/internal/controller/http/middleware"
 	"miraclevpn/internal/repo"
@@ -39,24 +40,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	dbUser := os.Getenv("DB_USER")
-	dbHost := os.Getenv("DB_HOST")
-	dbPass := os.Getenv("DB_PASSWORD")
-	dbName := os.Getenv("DB_NAME")
-	dbPort := os.Getenv("DB_PORT")
-	dbSsl := os.Getenv("DB_SSLMODE")
-	dbTZ := os.Getenv("DB_TIMEZONE")
 	logDir := os.Getenv("LOG_DIR")
 	logRetain, _ := strconv.Atoi(os.Getenv("LOG_RETAIN"))
 	debug := os.Getenv("DEBUG") == "true"
 	jwtSecretAuth := os.Getenv("JWT_SECRET_AUTH")
 	jwtSecretPayment := os.Getenv("JWT_SECRET_PAYMENT")
 
-	sshUser := os.Getenv("SSH_USER")
-	sshStatusPath := os.Getenv("SSH_STATUS_PATH")
-	sshCreateUserFile := os.Getenv("SSH_CREATE_USER_FILE")
-	sshRevokeUserFile := os.Getenv("SSH_REVOKE_USER_FILE")
-	sshConfigsDir := os.Getenv("SSH_CONFIGS_DIR")
+	sshUser := os.Getenv("OVPN_SSH_USER")
+	sshStatusPath := os.Getenv("OVPN_STATUS_PATH")
+	sshCreateUserFile := os.Getenv("OVPN_CREATE_USER_FILE")
+	sshRevokeUserFile := os.Getenv("OVPN_REVOKE_USER_FILE")
+	sshConfigsDir := os.Getenv("OVPN_CONFIGS_DIR")
 
 	awgSSHUser := os.Getenv("AWG_SSH_USER")
 	if awgSSHUser == "" {
@@ -119,7 +113,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	gormDB, err := db.NewPostgreConn(dbHost, dbUser, dbPass, dbName, dbPort, dbSsl, dbTZ, "MIIVPN_API")
+	gormDB, err := db.NewConnFromEnv()
 	if err != nil {
 		logger.Logger.Fatal("failed to connect to db", zap.Error(err))
 	}

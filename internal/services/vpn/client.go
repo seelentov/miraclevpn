@@ -32,4 +32,5 @@ type VpnService interface {
 	GetRate(host string, address string, sec int) (int64, int64, error)
 	KickUser(host string, username string) error
 	GetAllRate(host string, sec int) ([]*TraficStatus, error)
+	CheckAvailable(host string) (bool, error)
 }

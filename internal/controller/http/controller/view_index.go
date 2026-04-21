@@ -1,27 +1,31 @@
 package controller
 
 import (
+	"miraclevpn/internal/models"
+	"miraclevpn/internal/repo"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ViewIndexController struct {
+	reviewRepo *repo.ReviewRepository
 }
 
-func NewViewIndexController() *ViewIndexController {
-	return &ViewIndexController{}
+func NewViewIndexController(reviewRepo *repo.ReviewRepository) *ViewIndexController {
+	return &ViewIndexController{reviewRepo: reviewRepo}
 }
 
 type GetIndexViewModel struct {
 	ViewBase
+	Reviews []*models.Review
 }
 
 func (c *ViewIndexController) GetIndex(ctx *gin.Context) {
+	reviews, _ := c.reviewRepo.FindActive()
 	ctx.HTML(http.StatusOK, "index.html", GetIndexViewModel{
-		ViewBase: ViewBase{
-			ShowHeaderNav: true,
-		},
+		ViewBase: ViewBase{ShowHeaderNav: true},
+		Reviews:  reviews,
 	})
 }
 

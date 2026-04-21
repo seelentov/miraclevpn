@@ -53,3 +53,7 @@ func (r *VpnRouter) KickUser(host string, username string) error {
 func (r *VpnRouter) GetAllRate(host string, sec int) ([]*TraficStatus, error) {
 	return r.clientForHost(host).GetAllRate(host, sec)
 }
+
+func (r *VpnRouter) CheckAvailable(host string) (bool, error) {
+	return r.clientForHost(host).CheckAvailable(host)
+}
