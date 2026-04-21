@@ -126,28 +126,39 @@ func (c *ConnectTGController) Connect(bot *tgbotapi.BotAPI, data map[string]inte
 func (c *ConnectTGController) sendConfig(bot *tgbotapi.BotAPI, chatID int64, server *models.Server, config string) {
 	meta := vpnMeta(server.Type)
 
+	desktopLine := ""
+	if meta.windowsURL != "" {
+		desktopLine = fmt.Sprintf("   - [Скачать для Windows](%s)\n"+
+			"   - [Скачать для macOS](%s)\n", meta.windowsURL, meta.macosURL)
+	}
 	text := fmt.Sprintf("⏳ *Подключаемся к %s (%s)...*\n\n"+
 		"📖 *Простая инструкция:*\n\n"+
 		"1️⃣ *Скачайте приложение* %s, если у вас его еще нет:\n"+
 		"   - [Скачать для iOS](%s)\n"+
-		"   - [Скачать для Android](%s)\n\n"+
-		"2️⃣ *Откройте файл (%s) в приложении*\n\n"+
+		"   - [Скачать для Android](%s)\n"+
+		"%s"+
+		"\n2️⃣ *Откройте файл (%s) в приложении*\n\n"+
 		"⚠️ Если не подключается получите новый файл, нажав *Обновить*.\n",
 		server.RegionName, serverDisplayName(server),
-		meta.appName, meta.iosURL, meta.androidURL, meta.fileName)
+		meta.appName, meta.iosURL, meta.androidURL, desktopLine, meta.fileName)
 
-	keyboard := tgbotapi.NewInlineKeyboardMarkup(
+	rows := [][]tgbotapi.InlineKeyboardButton{
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData("♻️ Обновить",
 				fmt.Sprintf("/connect:%v:%v", chatID, server.ID)),
 		),
 		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonURL("ℹ️ Инструкция iOS", meta.iosURL),
+			tgbotapi.NewInlineKeyboardButtonURL("📱 iOS", meta.iosURL),
+			tgbotapi.NewInlineKeyboardButtonURL("🤖 Android", meta.androidURL),
 		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonURL("ℹ️ Инструкция Android", meta.androidURL),
-		),
-	)
+	}
+	if meta.windowsURL != "" {
+		rows = append(rows, tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonURL("🖥 Windows", meta.windowsURL),
+			tgbotapi.NewInlineKeyboardButtonURL(" macOS", meta.macosURL),
+		))
+	}
+	keyboard := tgbotapi.NewInlineKeyboardMarkup(rows...)
 
 	docMsg := tgbotapi.NewDocument(chatID, tgbotapi.FileBytes{
 		Name:  meta.fileName,
@@ -228,6 +239,8 @@ type vpnMetadata struct {
 	appName    string
 	iosURL     string
 	androidURL string
+	windowsURL string
+	macosURL   string
 }
 
 func vpnMeta(serverType string) vpnMetadata {
@@ -235,9 +248,11 @@ func vpnMeta(serverType string) vpnMetadata {
 	case models.ServerTypeAmneziaWG:
 		return vpnMetadata{
 			fileName:   "config.conf",
-			appName:    "AmneziaWG",
+			appName:    "AmneziaVPN",
 			iosURL:     "https://apps.apple.com/us/app/amneziawg/id6478942365",
 			androidURL: "https://play.google.com/store/apps/details?id=org.amnezia.awg&hl=ru&pli=1",
+			windowsURL: "https://github.com/amnezia-vpn/amnezia-client/releases/download/4.8.14.5/AmneziaVPN_4.8.14.5_x64.exe",
+			macosURL:   "https://github.com/amnezia-vpn/amnezia-client/releases/download/4.8.14.5/AmneziaVPN_4.8.14.5_macos.pkg",
 		}
 	default:
 		return vpnMetadata{

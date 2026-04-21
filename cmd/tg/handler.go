@@ -117,8 +117,6 @@ func main() {
 	r.UseHandler("/start", indexCtrl.Index)
 	r.UseHandler("/menu", indexCtrl.Index)
 	r.UseHandler("/get_key", authCtrl.GetToken)
-	r.UseHandler("/gift", indexCtrl.FreeForReview)
-
 	r.UseHandler("/servers", connectCtrl.Index)
 	r.UseHandler("/quick_connect", connectCtrl.QuickConnect)
 	r.UseHandler("/connect", connectCtrl.Connect)

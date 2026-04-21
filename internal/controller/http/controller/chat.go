@@ -174,14 +174,6 @@ func (c *ChatController) Action(ctx *gin.Context) {
 				{{Text: "🏠 Главное меню", Action: "menu"}},
 			},
 		}}
-	case "gift":
-		msgs = []ChatMsg{{
-			Text: "🎁 *7 дней подписки за отзыв!*\n\nПолучите 7 дней бесплатной подписки в обмен на ваш честный отзыв!\n\n*Как это работает:*\n1. Напишите отзыв о сервисе\n2. Укажите в отзыве ваш UID: `" + user.ID + "`\n3. После проверки мы активируем 7 дней!\n\n* Воспользоваться только 1 раз на аккаунт",
-			Buttons: [][]ChatButton{
-				{{Text: "💬 Написать отзыв", URL: "https://t.me/miiboost_support"}},
-				{{Text: "🔙 Назад", Action: "menu"}},
-			},
-		}}
 	case "servers":
 		msgs = c.buildServersList(user)
 	case "quick_connect":
@@ -258,7 +250,6 @@ func (c *ChatController) buildMainMenu(user *models.User, token string) ChatMsg 
 	buttons := [][]ChatButton{
 		{{Text: "⚡ Быстрое подключение", Action: "quick_connect"}},
 		{{Text: "🌍 Выбрать сервер", Action: "servers"}},
-		{{Text: "🎁 7 дней за отзыв!", Action: "gift"}},
 	}
 	if c.paymentURL != "" {
 		buttons = append(buttons, []ChatButton{{Text: "♻️ Продлить подписку", URL: c.paymentURL + "/?token=" + token}})
@@ -337,20 +328,33 @@ func (c *ChatController) buildConfigMsg(srv *models.Server, token string) []Chat
 	meta := chatVpnMeta(srv.Type)
 	fileName := fmt.Sprintf("vpn_%d%s", rand.Intn(1001), meta.fileExt)
 	fileURL := fmt.Sprintf("/api/chat/dl/%d?token=%s&name=%s", srv.ID, token, fileName)
+
+	desktopLine := ""
+	if meta.windowsURL != "" {
+		desktopLine = fmt.Sprintf("\n   [Windows](%s) · [macOS](%s)", meta.windowsURL, meta.macosURL)
+	}
 	text := fmt.Sprintf(
-		"⏳ *Подключаемся к %s (%s)...*\n\n📖 *Инструкция:*\n\n1️⃣ Скачайте приложение *%s*:\n   [iOS](%s) · [Android](%s)\n\n2️⃣ Нажмите *Скачать конфиг* ниже и откройте файл `%s` в приложении\n\n⚠️ Если не подключается — нажмите *Обновить*.",
+		"⏳ *Подключаемся к %s (%s)...*\n\n📖 *Инструкция:*\n\n1️⃣ Скачайте приложение *%s*:\n   [iOS](%s) · [Android](%s)%s\n\n2️⃣ Нажмите *Скачать конфиг* ниже и откройте файл `%s` в приложении\n\n⚠️ Если не подключается — нажмите *Обновить*.",
 		srv.RegionName, chatServerDisplayName(srv),
-		meta.appName, meta.iosURL, meta.androidURL,
+		meta.appName, meta.iosURL, meta.androidURL, desktopLine,
 		fileName,
 	)
+
+	buttons := [][]ChatButton{
+		{{Text: "♻️ Обновить", Action: fmt.Sprintf("connect:%d", srv.ID)}},
+		{{Text: "📱 iOS", URL: meta.iosURL}, {Text: "🤖 Android", URL: meta.androidURL}},
+	}
+	if meta.windowsURL != "" {
+		buttons = append(buttons, []ChatButton{
+			{Text: "🖥 Windows", URL: meta.windowsURL},
+			{Text: " macOS", URL: meta.macosURL},
+		})
+	}
+	buttons = append(buttons, []ChatButton{{Text: "🔙 Меню", Action: "menu"}})
+
 	return []ChatMsg{{
-		Text: text,
-		Buttons: [][]ChatButton{
-			{{Text: "♻️ Обновить", Action: fmt.Sprintf("connect:%d", srv.ID)}},
-			{{Text: "📱 Приложение iOS", URL: meta.iosURL}},
-			{{Text: "🤖 Приложение Android", URL: meta.androidURL}},
-			{{Text: "🔙 Меню", Action: "menu"}},
-		},
+		Text:    text,
+		Buttons: buttons,
 		File: &ChatFile{
 			Name: fileName,
 			URL:  fileURL,
@@ -395,6 +399,8 @@ type chatVpnMetadata struct {
 	appName    string
 	iosURL     string
 	androidURL string
+	windowsURL string
+	macosURL   string
 }
 
 func chatVpnMeta(serverType string) chatVpnMetadata {
@@ -402,9 +408,11 @@ func chatVpnMeta(serverType string) chatVpnMetadata {
 	case models.ServerTypeAmneziaWG:
 		return chatVpnMetadata{
 			fileExt:    ".conf",
-			appName:    "AmneziaWG",
+			appName:    "AmneziaVPN",
 			iosURL:     "https://apps.apple.com/us/app/amneziawg/id6478942365",
 			androidURL: "https://play.google.com/store/apps/details?id=org.amnezia.awg&hl=ru&pli=1",
+			windowsURL: "https://github.com/amnezia-vpn/amnezia-client/releases/download/4.8.14.5/AmneziaVPN_4.8.14.5_x64.exe",
+			macosURL:   "https://github.com/amnezia-vpn/amnezia-client/releases/download/4.8.14.5/AmneziaVPN_4.8.14.5_macos.pkg",
 		}
 	default:
 		return chatVpnMetadata{
